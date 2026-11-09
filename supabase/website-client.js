@@ -58,7 +58,7 @@
   }
   async function signIn(email, password) { return storeSession(await authRequest('token?grant_type=password', { email, password })); }
   function signInWithGoogle() {
-    if (!baseUrl || !apiKey) throw new Error('FandomRoom sign-in is not configured yet.');
+    if (!baseUrl || !apiKey) throw new Error('Fandom Room sign-in is not configured yet.');
     const returnTo = `${location.origin}${location.pathname}${location.search}`;
     const authorize = new URL(`${baseUrl}/auth/v1/authorize`);
     authorize.searchParams.set('provider', 'google');
@@ -81,7 +81,7 @@
     const response = await fetch(`${baseUrl}/rest/v1/${path}`, { ...options, headers });
     if (response.status === 204) return null;
     const result = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(result.message || result.details || result.hint || 'FandomRoom could not complete that request.');
+    if (!response.ok) throw new Error(result.message || result.details || result.hint || 'Fandom Room could not complete that request.');
     return result;
   }
   const params = values => new URLSearchParams(values).toString();
