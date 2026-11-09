@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "FandomRoom",
+  "version": "0.1.0",
+  "description": "Open the discussion for the anime you’re watching.",
+  "permissions": ["sidePanel", "activeTab", "scripting", "tabs", "storage"],
+  "host_permissions": ["https://zbayifekoqasimvqreav.supabase.co/*"],
+  "background": {
+    "service_worker": "service-worker.js"
+  },
+  "action": {
+    "default_title": "Scan this page and open its FandomRoom discussion"
+  },
+  "side_panel": {
+    "default_path": "extension.html"
+  }
+}

@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f1016">
+  <title>FandomRoom — Jujutsu Kaisen discussion</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0f1016;
+      --surface: #1b1b24;
+      --surface-raised: #22222d;
+      --surface-chip: #2a2938;
+      --line: #32323d;
+      --text: #f5f4f7;
+      --muted: #aaa9b9;
+      --dim: #777788;
+      --lime: #03c0e1;
+      --lime-ink: #07191d;
+      --purple: #aaa1c9;
+      --danger: #ff9b9b;
+      --radius: 16px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--text); }
+    button, input, textarea { font: inherit; }
+    button { color: inherit; }
+    .page { width: min(100%, 780px); min-height: 100vh; margin: 0 auto; padding: 0 16px 18px; }
+    .site-header { height: 77px; display: flex; align-items: center; justify-content: space-between; margin: 0 -16px; padding: 0 16px; border-bottom: 1px solid #44434d; }
+    .brand { font-size: 22px; font-weight: 750; letter-spacing: -.8px; text-decoration: none; color: var(--text); }
+    .brand img { display: block; width: 120px; height: auto; }
+    .profile { border: 0; width: 48px; height: 48px; display: grid; place-items: center; border-radius: 50%; color: #fff; font-size: 21px; background: linear-gradient(145deg, #c86bff 5%, #fa7abd 54%, #ffbd4c); }
+    .crumb-search { min-height: 61px; margin: 0 -16px; padding: 8px 16px; display: flex; align-items: center; justify-content: space-between; gap: 14px; border-bottom: 1px solid #44434d; }
+    .crumbs { display: flex; align-items: center; gap: 9px; white-space: nowrap; min-width: 0; color: #dedde4; font-size: 12px; }
+    .crumbs span { color: var(--dim); }
+    .crumbs b { overflow: hidden; text-overflow: ellipsis; font-weight: 650; }
+    .search-wrap { position: relative; width: min(276px, 50%); flex: 0 1 276px; }
+    .search { width: 100%; height: 46px; padding: 0 13px; color: var(--text); background: #22212c; border: 1px solid #302f3a; border-radius: 9px; outline: none; }
+    .search::placeholder { color: #777684; }
+    .search:focus { border-color: #87839d; }
+    .search-results { position: absolute; top: calc(100% + 6px); left: 0; right: 0; display: none; z-index: 4; padding: 10px 12px; background: #24232e; border: 1px solid #3b3a46; border-radius: 9px; color: #d8d6df; font-size: 12px; box-shadow: 0 10px 24px #0007; }
+    .search-results.show { display: block; }
+    .intro { padding-top: 18px; }
+    .eyebrow { display: flex; gap: 8px; align-items: center; color: var(--lime); text-transform: uppercase; font-size: 11px; font-weight: 700; letter-spacing: .35px; }
+    .eyebrow::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--lime); }
+    h1 { margin: 12px 0 2px; font-size: clamp(23px, 5.7vw, 32px); line-height: 1.18; letter-spacing: -.7px; font-weight: 740; }
+    .subheading { margin: 5px 0 16px; font-size: 16px; color: #e0dfe5; letter-spacing: .04px; }
+    .head-actions { display: flex; gap: 8px; align-items: center; }
+    .outline-button, .follow-button { min-height: 54px; padding: 0 18px; border: 1px solid #e1e0e6; border-radius: 9px; background: transparent; font-size: 14px; font-weight: 650; transition: transform .15s, background .15s; }
+    .outline-button:hover { background: #22232b; }
+    .follow-button { display: inline-flex; gap: 9px; align-items: center; border-color: var(--lime); background: var(--lime); color: var(--lime-ink); }
+    .follow-button.is-following { background: transparent; color: var(--lime); }
+    .head-actions button:active { transform: scale(.97); }
+    .tabs { display: flex; align-items: stretch; gap: 0; margin-top: 20px; border-bottom: 1px solid #32313b; }
+    .tab { position: relative; min-height: 47px; padding: 0 16px; border: 0; background: transparent; color: #aaa9ba; white-space: nowrap; font-size: 15px; }
+    .tab:first-child { padding-left: 16px; }
+    .tab.active { color: #f4f3f6; }
+    .tab.active::after { content: ""; position: absolute; right: 0; bottom: -1px; left: 0; height: 1px; background: var(--lime); }
+    .room-toolbar { min-height: 49px; display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; }
+    .room-stats { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .room-stats strong { font-weight: 700; }
+    .room-stats span { color: #d3d2da; }
+    .sort-select { padding: 7px 1px 7px 8px; border: 0; background: transparent; color: #eeeef2; font-weight: 650; font-size: 12px; outline: none; }
+    .sort-select option { background: #22222a; }
+    .mod-note { display: grid; grid-template-columns: 17px 1fr; gap: 3px; margin: 1px -4px 10px; padding: 14px 16px; border: 1px solid #e0dfe6; border-radius: 18px; background: #1c1c24; font-size: 12px; line-height: 1.55; }
+    #scanStatus { margin: 12px 0 0; }
+    .mod-icon { padding-top: 1px; color: var(--lime); font-size: 15px; }
+    .mod-note strong { display: block; margin: 0 0 7px; font-weight: 650; }
+    .mod-note p { margin: 0; color: #e0dfe4; }
+    .feed { padding: 0 0 2px; }
+    .message { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 12px; padding: 18px 0; border-bottom: 1px solid #30303a; animation: appear .28s ease both; }
+    @keyframes appear { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    .avatar { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; color: #fff; font-size: 12px; font-weight: 700; flex: none; }
+    .avatar.ren { background: #403d5e; }
+    .avatar.tom { background: #2e625d; }
+    .avatar.nova { background: #825c91; }
+    .avatar.me { background: linear-gradient(135deg, #c86bff, #ffbd4c); }
+    .message-body { min-width: 0; }
+    .message-head { display: flex; align-items: baseline; gap: 7px; flex-wrap: wrap; min-height: 23px; }
+    .message-head strong { font-size: 15px; letter-spacing: .1px; }
+    .time { color: #aaa9ba; font-size: 12px; }
+    .spoiler-label { border-radius: 11px; padding: 4px 10px; color: #aaa6bd; background: #292834; font-size: 11px; }
+    .message-text { margin: 4px 0 7px; color: #e4e2e9; font-size: 15px; line-height: 1.48; overflow-wrap: anywhere; }
+    .spoiler-box { width: fit-content; max-width: 100%; margin: 4px 0 7px; padding: 8px 10px; border: 1px solid #3b394d; border-radius: 6px; background: #292838; color: #aaa8b8; font-size: 13px; cursor: pointer; transition: border-color .15s, background .15s; }
+    .spoiler-box:hover { border-color: #716d8c; }
+    .spoiler-box.hidden-spoiler .spoiler-content { filter: blur(4px); user-select: none; }
+    .spoiler-box .click-hint { display: none; }
+    .spoiler-box.hidden-spoiler .click-hint { display: inline; }
+    .message-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; }
+    .small-action { min-height: 32px; padding: 0 10px; border: 1px solid #3a3948; border-radius: 6px; background: #2a2938; color: #a9a6bb; font-size: 12px; transition: background .15s, color .15s; }
+    .small-action:hover { background: #343243; color: #eeedf4; }
+    .small-action.liked { color: #ff9daf; border-color: #59414e; }
+    .small-action.report { display: none; }
+    .message:hover .small-action.report { display: inline-block; }
+    .reply-thread { position: relative; margin: 7px 0 0 -30px; padding-left: 30px; color: #e0dfe6; font-size: 12px; }
+    .reply-thread::before { content: ""; position: absolute; left: 0; top: -16px; width: 25px; height: 24px; border-left: 1px solid #c9c8d0; border-bottom: 1px solid #c9c8d0; }
+    .reply-list { display: none; margin: 10px 0 0 -30px; padding: 9px 0 0 30px; border-left: 1px solid #42414c; }
+    .reply-list.open { display: block; animation: appear .2s ease both; }
+    .reply-item { margin: 0 0 10px; color: #d0ced8; font-size: 12px; line-height: 1.5; }
+    .reply-item strong { color: #f0eef5; margin-right: 5px; }
+    .reply-item span { color: var(--dim); font-size: 10px; margin-left: 5px; }
+    .reply-input { display: flex; gap: 7px; margin: 8px 0 0 -30px; padding-left: 30px; }
+    .reply-input input { min-width: 0; flex: 1; height: 34px; padding: 0 9px; border: 1px solid #393844; border-radius: 6px; background: #191920; color: #eee; outline: none; font-size: 12px; }
+    .reply-input button { border: 0; border-radius: 6px; padding: 0 11px; background: var(--lime); color: var(--lime-ink); font-size: 11px; font-weight: 700; }
+    .composer { position: sticky; bottom: 10px; z-index: 2; margin: 10px 0 0; padding: 12px 15px 10px; border: 1px solid #e0dfe6; border-radius: 18px; background: #1b1b24; box-shadow: 0 12px 30px #0007; }
+    .composer textarea { display: block; width: 100%; min-height: 103px; max-height: 200px; resize: vertical; padding: 13px 4px 10px; border: 0; outline: 0; background: transparent; color: #f5f4f7; font-size: 12px; line-height: 1.5; }
+    .composer textarea::placeholder { color: #e4e2e8; opacity: 1; }
+    .composer-bottom { min-height: 59px; display: flex; justify-content: space-between; align-items: center; gap: 12px; border-top: 1px solid #302f39; }
+    .spoiler-toggle { display: inline-flex; align-items: center; gap: 8px; padding: 9px 1px; border: 0; background: transparent; color: #dfdee4; font-size: 12px; }
+    .radio { width: 16px; height: 16px; border: 2px solid #f1f0f4; border-radius: 50%; display: inline-grid; place-items: center; }
+    .spoiler-toggle[aria-pressed="true"] .radio::after { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--lime); }
+    .post-button { min-height: 48px; padding: 0 16px; border: 0; border-radius: 9px; background: var(--lime); color: var(--lime-ink); font-size: 12px; font-weight: 500; transition: transform .15s, filter .15s; }
+    .post-button:hover { filter: brightness(1.05); }
+    .post-button:active { transform: scale(.97); }
+    .toast { position: fixed; left: 50%; bottom: 18px; z-index: 5; transform: translate(-50%, 14px); opacity: 0; pointer-events: none; max-width: calc(100% - 32px); padding: 11px 15px; border: 1px solid #454451; border-radius: 9px; background: #272631; box-shadow: 0 8px 24px #0009; color: #f3f2f7; font-size: 12px; text-align: center; transition: opacity .2s, transform .2s; }
+    .toast.visible { opacity: 1; transform: translate(-50%, 0); }
+    .empty { padding: 30px 12px; color: var(--muted); text-align: center; font-size: 13px; }
+    @media (min-width: 780px) {
+      body { background: #0b0c11; }
+      .page { padding-inline: 24px; border-inline: 1px solid #25252e; background: var(--bg); }
+      .site-header, .crumb-search { margin-inline: -24px; padding-inline: 24px; }
+      .intro { padding-top: 24px; }
+      .composer { bottom: 16px; }
+    }
+    @media (max-width: 420px) {
+      .crumb-search { gap: 8px; }
+      .crumbs { gap: 6px; font-size: 11px; }
+      .search-wrap { width: 42%; flex-basis: 42%; }
+      .search { height: 42px; padding-inline: 10px; font-size: 13px; }
+      .profile { width: 44px; height: 44px; }
+      .message { gap: 10px; }
+      .composer { padding-inline: 12px; }
+      .tab { padding-inline: 12px; font-size: 14px; }
+      .post-button { padding-inline: 13px; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="site-header">
+      <a class="brand" href="#" aria-label="FandomRoom home"><img src="logo/svg/Horizontal.svg" alt="FandomRoom" width="120" height="32"></a>
+      <button class="profile" id="profile" aria-label="Profile menu">N</button>
+    </header>
+    <div class="crumb-search">
+      <div class="crumbs" aria-label="Breadcrumb"><span>Discussions</span><i>/</i><span>Jujutsu Kaisen</span><i>/</i><b id="crumbTitle">Episode 07</b></div>
+      <div class="search-wrap"><input class="search" id="search" type="search" placeholder="Search titles" aria-label="Search titles"><div class="search-results" id="searchResults"></div></div>
+    </div>
+    <main>
+      <div class="mod-note" id="scanStatus" role="status" aria-live="polite"><span class="mod-icon">◉</span><div><strong id="scanTitle">Waiting for a page scan</strong><p id="scanMessage">Open an anime page on Crunchyroll or AnimeHeaven, then click the FandomRoom toolbar button.</p></div></div>
+      <section class="intro" aria-labelledby="roomTitle">
+        <div class="eyebrow" id="roomType">Episode discussion</div>
+        <h1 id="roomTitle">Episode 07 - The Culling Games</h1>
+        <p class="subheading" id="seriesSubtitle">Jujutsu Kaisen - Season 2</p>
+        <div class="head-actions">
+          <button class="outline-button" id="shareButton">↗&nbsp; Share</button>
+          <button class="follow-button" id="followButton" aria-pressed="false"><span>＋</span> Follow</button>
+        </div>
+      </section>
+      <nav class="tabs" aria-label="Discussion scope">
+        <button class="tab active" id="episodeTab" role="tab" aria-selected="true">Discussion</button>
+        <button class="tab" id="animeTab" role="tab" aria-selected="false">Discuss the whole anime</button>
+      </nav>
+      <div class="room-toolbar">
+        <div class="room-stats"><strong id="messageCount">128 messages</strong><span id="onlineCount">25 super fans here</span></div>
+        <select id="sortOrder" class="sort-select" aria-label="Sort discussion">
+          <option value="newest">Newest first&nbsp; ⌄</option>
+          <option value="oldest">Oldest first&nbsp; ⌄</option>
+        </select>
+      </div>
+      <aside class="mod-note" aria-live="polite">
+        <span class="mod-icon">⦿</span><div><strong id="noteTitle">Room note from the mods</strong><p id="noteText">Keep discussion to episode 7. Mark anything beyond this episode as a spoiler so everyone can enjoy the reveal at their own pace.</p></div>
+      </aside>
+      <section class="feed" id="feed" aria-label="Discussion messages" aria-live="polite"></section>
+      <form class="composer" id="composer">
+        <textarea id="messageInput" placeholder="What did you think of the episode..." aria-label="Write a message" maxlength="2000"></textarea>
+        <div class="composer-bottom">
+          <button type="button" class="spoiler-toggle" id="spoilerToggle" aria-pressed="false"><span class="radio"></span> Spoiler</button>
+          <button type="submit" class="post-button">Post message&nbsp; ↗</button>
+        </div>
+      </form>
+    </main>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="supabase/config.js" defer></script>
+  <script src="supabase/client.js" defer></script>
+  <script src="app.js" defer></script>
+</body>
+</html>
+
+
+
