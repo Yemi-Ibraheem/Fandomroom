@@ -1,5 +1,5 @@
 (() => {
-  const config = globalThis.TALKANIME_SUPABASE || {};
+  const config = globalThis.FANDOMROOM_SUPABASE || {};
   const baseUrl = (config.url || '').replace(/\/$/, '');
   const apiKey = config.publishableKey || '';
   const configured = Boolean(baseUrl && apiKey && !apiKey.includes('PASTE_'));
@@ -23,7 +23,7 @@
       body: JSON.stringify({ data: {} })
     });
     const result = await response.json();
-    if (!response.ok || !result.access_token) throw new Error(result.msg || result.message || 'Could not start an anonymous TalkAnime session.');
+    if (!response.ok || !result.access_token) throw new Error(result.msg || result.message || 'Could not start an anonymous FandomRoom session.');
     return storeSession(result);
   }
   function storeSession(value) {
@@ -84,5 +84,5 @@
     if (follow) await request('follows', { method: 'POST', body: JSON.stringify({ user_id: active.user.id, anime_slug: animeSlug }) }, true);
     else await request(`follows?${where}`, { method: 'DELETE' }, true);
   }
-  globalThis.TalkAnimeBackend = { configured, createPost, isFollowing, loadPosts, setFollowing, toggleLike };
+  globalThis.FandomRoomBackend = { configured, createPost, isFollowing, loadPosts, setFollowing, toggleLike };
 })();

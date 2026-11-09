@@ -11,7 +11,7 @@ chrome.action.onClicked.addListener(async (tab) => {
     season: '',
     url: tab.url || '',
     site: 'Unsupported page',
-    message: 'Open a Crunchyroll or AnimeHeaven page, then click TalkAnime again.'
+    message: 'Open a Crunchyroll or AnimeHeaven page, then click FandomRoom again.'
   };
 
   try {
@@ -40,7 +40,7 @@ chrome.action.onClicked.addListener(async (tab) => {
     }
   } catch (error) {
     scan.message = error?.message?.includes('Cannot access')
-      ? 'Chrome could not read this page. Refresh the tab and click TalkAnime again.'
+      ? 'Chrome could not read this page. Refresh the tab and click FandomRoom again.'
       : 'Could not scan this page. Refresh it and try again.';
   }
 
@@ -67,6 +67,6 @@ function identifyAnime(page, hostname) {
   }).find((value) => value && !/^(watch|home|episode\b|ep\.?\s*\d|related|recommended|next episode|animeheaven|crunchyroll)$/i.test(value)) || '';
   const site = /crunchyroll/i.test(hostname) ? 'Crunchyroll' : 'AnimeHeaven';
 
-  if (!title) return { supported: true, title: '', episode, season, url: page.url, site, message: 'Page scanned, but no anime title was clear. Open the anime or episode details page and click TalkAnime again.' };
+  if (!title) return { supported: true, title: '', episode, season, url: page.url, site, message: 'Page scanned, but no anime title was clear. Open the anime or episode details page and click FandomRoom again.' };
   return { supported: true, title, episode, season, url: page.url, site, message: episode ? 'Episode discussion found' : 'Whole anime discussion found' };
 }

@@ -22,7 +22,7 @@
     let scope = 'episode';
     let markedSpoiler = false;
     let toastTimer;
-    let messages = TalkAnimeBackend.configured ? { episode: [], anime: [] } : {
+    let messages = FandomRoomBackend.configured ? { episode: [], anime: [] } : {
       episode: read(episodeKey(), seed.episode),
       anime: read(animeKey(), seed.anime)
     };
@@ -30,7 +30,7 @@
       try { const data = JSON.parse(localStorage.getItem(key)); return Array.isArray(data) ? data : structuredClone(fallback); }
       catch { return structuredClone(fallback); }
     }
-    function save() { if (TalkAnimeBackend.configured) return; try { localStorage.setItem(scope === 'episode' ? episodeKey() : animeKey(), JSON.stringify(messages[scope])); } catch {} }
+    function save() { if (FandomRoomBackend.configured) return; try { localStorage.setItem(scope === 'episode' ? episodeKey() : animeKey(), JSON.stringify(messages[scope])); } catch {} }
     function toast(message) {
       const el = $('#toast'); el.textContent = message; el.classList.add('visible');
       clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('visible'), 2200);
@@ -44,7 +44,7 @@
       feed.innerHTML = '';
       if (!filtered.length) { feed.innerHTML = `<div class="empty">${query ? 'No messages match your search.' : 'No messages here yet. Start the conversation.'}</div>`; }
       for (const message of filtered) feed.appendChild(messageElement(message));
-      const count = TalkAnimeBackend.configured ? list.length : scope === 'episode' ? 128 + Math.max(0, messages.episode.length - seed.episode.length) : 412 + Math.max(0, messages.anime.length - seed.anime.length);
+      const count = FandomRoomBackend.configured ? list.length : scope === 'episode' ? 128 + Math.max(0, messages.episode.length - seed.episode.length) : 412 + Math.max(0, messages.anime.length - seed.anime.length);
       $('#messageCount').textContent = `${count} ${scope === 'episode' ? 'messages' : 'posts'}`;
     }
     function messageElement(message) {
@@ -61,7 +61,7 @@
       $('.like', article).addEventListener('click', async e => {
         const target = messages[scope].find(m => m.id === message.id); if (!target) return;
         const wasLiked = Boolean(target.liked); target.liked = !wasLiked; target.likes = Math.max(0, (target.likes || 0) + (target.liked ? 1 : -1)); render();
-        try { if (TalkAnimeBackend.configured && !String(target.id).startsWith('local-')) { await TalkAnimeBackend.toggleLike(target.id, wasLiked); await syncBackendRoom(); } else save(); }
+        try { if (FandomRoomBackend.configured && !String(target.id).startsWith('local-')) { await FandomRoomBackend.toggleLike(target.id, wasLiked); await syncBackendRoom(); } else save(); }
         catch (error) { target.liked = wasLiked; target.likes = Math.max(0, (target.likes || 0) + (wasLiked ? 1 : -1)); render(); toast(error.message); }
       });
       $('.reply-button', article).addEventListener('click', () => { const form = $('.reply-input', article); form.hidden = !form.hidden; if (!form.hidden) $('input', form).focus(); });
@@ -69,7 +69,7 @@
       $('.reply-input', article).addEventListener('submit', async e => {
         e.preventDefault(); const input = $('input', e.currentTarget); const value = input.value.trim(); if (!value) return;
         try {
-          if (TalkAnimeBackend.configured && !String(message.id).startsWith('local-')) await TalkAnimeBackend.createPost({ animeSlug, scope, season: currentSeason, episode: currentEpisode, body: value, spoiler: false, parentId: message.id });
+          if (FandomRoomBackend.configured && !String(message.id).startsWith('local-')) await FandomRoomBackend.createPost({ animeSlug, scope, season: currentSeason, episode: currentEpisode, body: value, spoiler: false, parentId: message.id });
           else { const target = messages[scope].find(m => m.id === message.id); target.replies = target.replies || []; target.replies.push({ user: 'nao', text: value, time: 'now' }); save(); }
           await syncBackendRoom(); toast('Reply posted');
         } catch (error) { toast(error.message); }
@@ -88,7 +88,7 @@
       $('#crumbTitle').textContent = whole ? 'Whole anime' : currentEpisode;
       $('#noteTitle').textContent = whole ? 'Room note from the mods' : 'Room note from the mods';
       $('#noteText').textContent = whole ? 'This is the conversation for the whole anime. Mark major plot reveals as spoilers so fans can browse at their own pace.' : `Keep discussion to ${currentEpisode}. Mark anything beyond this episode as a spoiler so everyone can enjoy the reveal at their own pace.`;
-      $('#onlineCount').textContent = TalkAnimeBackend.configured ? 'Shared community room' : whole ? '58 super fans here' : '25 super fans here';
+      $('#onlineCount').textContent = FandomRoomBackend.configured ? 'Shared community room' : whole ? '58 super fans here' : '25 super fans here';
       $('#messageInput').placeholder = whole ? `What do you think of ${currentAnime}...` : `What did you think of ${currentEpisode}...`;
       $('#search').value = ''; $('#searchResults').classList.remove('show'); render();
       history.replaceState({}, '', whole ? '#anime' : '#episode-07');
@@ -96,11 +96,11 @@
     }
     let roomRequest = 0;
     async function syncBackendRoom() {
-      if (!TalkAnimeBackend.configured) return;
+      if (!FandomRoomBackend.configured) return;
       const requestId = ++roomRequest;
       const room = { animeSlug, scope, season: currentSeason, episode: currentEpisode };
       try {
-        const [posts, following] = await Promise.all([TalkAnimeBackend.loadPosts(room), TalkAnimeBackend.isFollowing(animeSlug)]);
+        const [posts, following] = await Promise.all([FandomRoomBackend.loadPosts(room), FandomRoomBackend.isFollowing(animeSlug)]);
         if (requestId !== roomRequest || animeSlug !== room.animeSlug || scope !== room.scope) return;
         messages[scope] = posts;
         const button = $('#followButton'); button.setAttribute('aria-pressed', String(following)); button.classList.toggle('is-following', following);
@@ -118,9 +118,9 @@
     $('#composer').addEventListener('submit', async e => {
       e.preventDefault(); const input = $('#messageInput'); const value = input.value.trim();
       if (!value) { input.focus(); toast('Write a message before posting.'); return; }
-      if (TalkAnimeBackend.configured) {
+      if (FandomRoomBackend.configured) {
         try {
-          await TalkAnimeBackend.createPost({ animeSlug, scope, season: currentSeason, episode: currentEpisode, body: value, spoiler: markedSpoiler });
+          await FandomRoomBackend.createPost({ animeSlug, scope, season: currentSeason, episode: currentEpisode, body: value, spoiler: markedSpoiler });
           input.value = ''; markedSpoiler = false; $('#spoilerToggle').setAttribute('aria-pressed', 'false');
           await syncBackendRoom(); toast('Your message was posted.');
         } catch (error) { toast(error.message); }
@@ -133,8 +133,8 @@
     $('#followButton').addEventListener('click', async e => {
       const following = e.currentTarget.getAttribute('aria-pressed') !== 'true'; e.currentTarget.setAttribute('aria-pressed', String(following));
       e.currentTarget.classList.toggle('is-following', following); e.currentTarget.innerHTML = following ? '✓&nbsp; Following' : '<span>＋</span> Follow';
-      if (TalkAnimeBackend.configured) {
-        try { await TalkAnimeBackend.setFollowing(animeSlug, following); }
+      if (FandomRoomBackend.configured) {
+        try { await FandomRoomBackend.setFollowing(animeSlug, following); }
         catch (error) { e.currentTarget.setAttribute('aria-pressed', String(!following)); e.currentTarget.classList.toggle('is-following', !following); e.currentTarget.innerHTML = !following ? '✓&nbsp; Following' : '<span>＋</span> Follow'; toast(error.message); }
         return;
       }
@@ -156,8 +156,8 @@
       currentSeason = scan.season || '';
       if (animeSlug !== previousSlug || currentEpisode !== previousEpisode || currentSeason !== previousSeason) {
         const demoRoom = animeSlug === 'jujutsu-kaisen' && currentEpisode === 'Episode 07' && currentSeason === 'Season 2';
-        messages = TalkAnimeBackend.configured ? { episode: [], anime: [] } : { episode: read(episodeKey(), demoRoom ? seed.episode : []), anime: read(animeKey(), animeSlug === 'jujutsu-kaisen' ? seed.anime : []) };
-        if (!TalkAnimeBackend.configured) try {
+        messages = FandomRoomBackend.configured ? { episode: [], anime: [] } : { episode: read(episodeKey(), demoRoom ? seed.episode : []), anime: read(animeKey(), animeSlug === 'jujutsu-kaisen' ? seed.anime : []) };
+        if (!FandomRoomBackend.configured) try {
           const following = localStorage.getItem(followKey()) === 'true';
           $('#followButton').setAttribute('aria-pressed', String(following));
           $('#followButton').classList.toggle('is-following', following);
@@ -176,7 +176,7 @@
         if (area === 'local' && changes.currentScan) applyScan(changes.currentScan.newValue);
       });
     }
-    if (!TalkAnimeBackend.configured) try { if (localStorage.getItem(followKey()) === 'true') { $('#followButton').setAttribute('aria-pressed', 'true'); $('#followButton').classList.add('is-following'); $('#followButton').innerHTML = '✓&nbsp; Following'; } } catch {}
+    if (!FandomRoomBackend.configured) try { if (localStorage.getItem(followKey()) === 'true') { $('#followButton').setAttribute('aria-pressed', 'true'); $('#followButton').classList.add('is-following'); $('#followButton').innerHTML = '✓&nbsp; Following'; } } catch {}
     $('#shareButton').addEventListener('click', async () => {
       try { await navigator.clipboard.writeText(location.href); toast('Discussion link copied.'); }
       catch { toast('Share this page using your browser’s share menu.'); }
