@@ -24,8 +24,8 @@
   }
   function niceError(error) {
     const text = error?.message || 'Something went wrong. Please try again.';
-    if (/relation .* does not exist|function .* does not exist|schema cache/i.test(text)) return 'FandomRoom’s thread database is not ready yet. Please try again shortly.';
-    if (/Failed to fetch|NetworkError/i.test(text)) return 'Could not reach FandomRoom. Check your connection and try again.';
+    if (/relation .* does not exist|function .* does not exist|schema cache/i.test(text)) return 'Fandom Room’s thread database is not ready yet. Please try again shortly.';
+    if (/Failed to fetch|NetworkError/i.test(text)) return 'Could not reach Fandom Room. Check your connection and try again.';
     return text;
   }
   function timeAgo(value) {
@@ -44,12 +44,17 @@
     pendingAction = action;
     openAuth();
   }
+  function requirePremium(action) {
+    if (currentUser?.app_metadata?.plan === 'premium') return action();
+    if (!currentUser) { pendingAction = () => requirePremium(action); openAuth(); return; }
+    openBackdrop('premiumBackdrop');
+  }
   function openAuth() {
     authMode = 'signin'; updateAuthMode(); openBackdrop('authBackdrop'); $('#authEmail').focus();
   }
   function updateAuthMode() {
     const signup = authMode === 'signup';
-    $('#authTitle').textContent = signup ? 'Create your FandomRoom account' : 'Welcome to FandomRoom';
+    $('#authTitle').textContent = signup ? 'Create your Fandom Room account' : 'Welcome to Fandom Room';
     $('#authSubmit').textContent = signup ? 'Create account' : 'Sign in';
     $('#authPassword').autocomplete = signup ? 'new-password' : 'current-password';
     $('#authSwitchText').textContent = signup ? 'Already a member?' : 'New here?';
@@ -60,7 +65,7 @@
     const session = await api.getSession(); currentUser = session?.user || null;
     const button = $('#authButton');
     button.textContent = currentUser ? 'Sign out' : 'Sign in';
-    button.setAttribute('aria-label', currentUser ? 'Sign out of FandomRoom' : 'Sign in to FandomRoom');
+    button.setAttribute('aria-label', currentUser ? 'Sign out of Fandom Room' : 'Sign in to Fandom Room');
   }
   function routeToThread(id) {
     const url = new URL(location.href);
@@ -72,7 +77,7 @@
   async function shareThread(thread) {
     const url = shareUrl(thread.id);
     const title = thread.title;
-    const text = `Join the ${thread.thread_type} and discussion on FandomRoom.`;
+    const text = `Join the ${thread.thread_type} and discussion on Fandom Room.`;
     try {
       if (navigator.share) await navigator.share({ title, text, url });
       else { await navigator.clipboard.writeText(url); toast('Thread link copied.'); }
@@ -93,7 +98,7 @@
     const id = new URLSearchParams(location.search).get('thread');
     if (!id) { goHome(); return; }
     $('#threadFeed').hidden = true; $('#typeSwitch').hidden = true; $('#threadDetail').hidden = false;
-    $('#feedState').hidden = true; $('#pageTitle').textContent = 'FandomRoom thread';
+    $('#feedState').hidden = true; $('#pageTitle').textContent = 'Fandom Room thread';
     $('#breadcrumb').innerHTML = 'Discover <b>/</b> <span>Thread</span>';
     $('#threadDetail').innerHTML = '<div class="state-message">Loading this thread…</div>';
     try {
@@ -183,7 +188,7 @@
         return `<div class="rank-row ${selectedRank >= 0 ? 'selected' : ''}" data-rank-row="${id}"><div class="rank-position">${position}</div><img src="${escapeHtml(item.image_url)}" alt=""><div><div class="rank-name">${escapeHtml(item.label)}</div><div class="rank-stat">${escapeHtml(rankingStat)}</div></div>${thread.ranking_mode === 'top_three' ? topThreeControls : control}</div>`;
       }).join('');
     }
-    $('#pageTitle').textContent = 'FandomRoom thread';
+    $('#pageTitle').textContent = 'Fandom Room thread';
     $('#breadcrumb').innerHTML = `Discover <b>/</b> ${escapeHtml(thread.topic)}`;
     const pollResponseCount = pollResults.reduce((sum, row) => sum + Number(row.response_count || 0), 0);
     const pollResultLabel = thread.poll_mode === 'multiple' ? 'selections' : 'votes';
@@ -275,20 +280,45 @@
   function addChoiceRow(label = '', file = null) {
     const root = $('#choiceFields'); if (root.children.length >= 12) { toast('A thread can have up to 12 choices.'); return; }
     const row = document.createElement('div'); row.className = 'choice-row';
-    row.innerHTML = `<input class="choice-label" maxlength="100" placeholder="${root.children.length < 2 ? 'Choice name' : 'Another choice'}" value="${escapeHtml(label)}" required><input class="choice-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif" aria-label="Image for choice ${root.children.length + 1}" required><img class="choice-image-preview" alt="" hidden><button class="remove-choice" type="button" aria-label="Remove choice">×</button>`;
+    row.innerHTML = `<span class="choice-index" aria-hidden="true">${String(root.children.length + 1).padStart(2, '0')}</span><input class="choice-label" maxlength="100" placeholder="${root.children.length < 2 ? 'Choice name' : 'Another choice'}" value="${escapeHtml(label)}" aria-label="Edit choice name" required><input class="choice-file" type="file" accept="image/jpeg,image/png,image/webp,image/gif" aria-label="Image for choice ${root.children.length + 1}" required><img class="choice-image-preview" alt="" hidden><div class="choice-order-controls"><button type="button" data-choice-move="up" aria-label="Move choice up">↑</button><button type="button" data-choice-move="down" aria-label="Move choice down">↓</button></div><button class="remove-choice" type="button" aria-label="Remove choice">×</button>`;
     $('.choice-file', row).addEventListener('change', event => { const image = $('.choice-image-preview', row); const selected = event.target.files[0]; if (selected) { image.src = URL.createObjectURL(selected); image.hidden = false; } });
-    $('.remove-choice', row).addEventListener('click', () => { if (root.children.length <= 2) { toast('Keep at least two choices.'); return; } row.remove(); });
+    $('.remove-choice', row).addEventListener('click', () => { if ($('#createType').value === 'poll' && root.children.length <= 2) { toast('Keep at least two choices.'); return; } row.remove(); refreshChoiceRows(); });
+    $$('[data-choice-move]', row).forEach(button => button.addEventListener('click', () => {
+      const sibling = button.dataset.choiceMove === 'up' ? row.previousElementSibling : row.nextElementSibling;
+      if (!sibling) return;
+      root.insertBefore(button.dataset.choiceMove === 'up' ? row : sibling, button.dataset.choiceMove === 'up' ? sibling : row);
+      refreshChoiceRows();
+    }));
     root.append(row);
     if (file) { const transfer = new DataTransfer(); transfer.items.add(file); $('.choice-file', row).files = transfer.files; $('.choice-image-preview', row).src = URL.createObjectURL(file); $('.choice-image-preview', row).hidden = false; }
+    refreshChoiceRows();
+  }
+  function refreshChoiceRows() {
+    const rows = $$('#choiceFields .choice-row');
+    rows.forEach((row, index) => {
+      $('.choice-index', row).textContent = String(index + 1).padStart(2, '0');
+      const up = $('[data-choice-move="up"]', row), down = $('[data-choice-move="down"]', row);
+      up.disabled = index === 0; down.disabled = index === rows.length - 1;
+      $('.choice-file', row).setAttribute('aria-label', `Image for choice ${index + 1}`);
+    });
+    const ranking = $('#createType').value === 'ranking';
+    $('#choiceField').classList.toggle('ranking-editor', ranking);
+    $('#addChoice').textContent = ranking ? (rows.length ? '＋ Add more images' : '＋ Add images to your ranking') : '＋ Add another choice';
+    $('#addChoice').classList.toggle('is-empty-ranking', ranking && rows.length === 0);
+    $('#rankingEmptyHint').hidden = !ranking || rows.length > 0;
   }
   function openCreate() {
-    $('#createError').textContent = ''; $('#createForm').reset(); $('#choiceFields').innerHTML = ''; addChoiceRow(); addChoiceRow();
-    $('#pollSettings').hidden = false; $('#rankingSettings').hidden = true; openBackdrop('createBackdrop'); $('#threadTitleInput').focus();
+    $('#createError').textContent = ''; $('#createForm').reset(); $('#choiceFields').innerHTML = '';
+    $('#createType').value = filter === 'ranking' ? 'ranking' : 'poll';
+    if ($('#createType').value === 'poll') { addChoiceRow(); addChoiceRow(); }
+    $('#pollSettings').hidden = $('#createType').value === 'ranking'; $('#rankingSettings').hidden = $('#createType').value !== 'ranking';
+    refreshChoiceRows(); openBackdrop('createBackdrop'); $('#threadTitleInput').focus();
   }
   async function submitCreate(event) {
     event.preventDefault(); $('#createError').textContent = '';
     const rows = $$('.choice-row', $('#choiceFields'));
     const items = rows.map(row => ({ label: $('.choice-label', row).value, file: $('.choice-file', row).files[0] }));
+    if (items.length < 2) { $('#createError').textContent = 'Add at least two images to build this thread.'; return; }
     if (items.some(item => !item.label.trim() || !item.file)) { $('#createError').textContent = 'Add a label and image for every choice.'; return; }
     const type = $('#createType').value; const closeDays = Number($('#pollClose').value);
     const draft = { type, title: $('#threadTitleInput').value.trim(), topic: $('#threadTopic').value.trim(), context: $('#threadContext').value.trim(), items,
@@ -332,7 +362,7 @@
     });
   }
   async function init() {
-    if (!api?.configured) { $('#feedState').innerHTML = '<div class="empty"><strong>Setup needed</strong>FandomRoom is missing its public Supabase configuration.</div>'; return; }
+    if (!api?.configured) { $('#feedState').innerHTML = '<div class="empty"><strong>Setup needed</strong>Fandom Room is missing its public Supabase configuration.</div>'; return; }
     try { await api.resumeLinkSession(); } catch (error) { toast(niceError(error)); }
     await syncHeader(); await renderRoute();
     $('#authButton').addEventListener('click', async () => {
@@ -347,17 +377,86 @@
     $('#authSwitch').addEventListener('click', () => { authMode = authMode === 'signin' ? 'signup' : 'signin'; updateAuthMode(); });
     $('#createButton').addEventListener('click', () => requireAuth(openCreate));
     $('#createForm').addEventListener('submit', event => { event.preventDefault(); requireAuth(() => submitCreate(event)); });
-    $('#createType').addEventListener('change', event => { const poll = event.target.value === 'poll'; $('#pollSettings').hidden = !poll; $('#rankingSettings').hidden = poll; });
-    $('#addChoice').addEventListener('click', () => addChoiceRow());
+    $('#createType').addEventListener('change', event => {
+      const poll = event.target.value === 'poll';
+      $('#pollSettings').hidden = !poll; $('#rankingSettings').hidden = poll; $('#choiceFields').innerHTML = '';
+      if (poll) { addChoiceRow(); addChoiceRow(); }
+      refreshChoiceRows();
+    });
+    $('#addChoice').addEventListener('click', () => {
+      if ($('#createType').value === 'ranking') { $('#rankingImageInput').click(); return; }
+      addChoiceRow();
+    });
+    $('#rankingImageInput').addEventListener('change', event => {
+      const files = [...event.target.files]; const remaining = 12 - $('#choiceFields').children.length;
+      files.slice(0, remaining).forEach(file => addChoiceRow(file.name.replace(/\.[^.]+$/, '').replace(/[_-]+/g, ' ').slice(0, 100), file));
+      if (files.length > remaining) toast('A ranking can have up to 12 images.');
+      event.target.value = '';
+    });
     $('#searchInput').addEventListener('input', event => { searchText = event.target.value.trim(); if (currentThread) return; renderFeed(); });
     $$('#typeSwitch button').forEach(button => button.addEventListener('click', () => setFilter(button.dataset.mode)));
-    $$('[data-filter-link]').forEach(link => link.addEventListener('click', event => { event.preventDefault(); setFilter(link.dataset.filterLink); }));
+    $$('[data-filter-link]').forEach(link => link.addEventListener('click', event => { event.preventDefault(); setFilter(link.dataset.filterLink); $('#community').scrollIntoView({ behavior: 'smooth', block: 'start' }); }));
     $('#myThreads').addEventListener('click', () => { if (!currentUser) { pendingAction = () => { ownThreads = true; setFilter('all', true); }; openAuth(); return; } ownThreads = !ownThreads; setFilter('all', ownThreads); });
     $$('[data-close="auth"]').forEach(button => button.addEventListener('click', () => closeBackdrop('authBackdrop')));
+    $$('[data-close="premium"]').forEach(button => button.addEventListener('click', () => closeBackdrop('premiumBackdrop')));
     $$('[data-close="create"]').forEach(button => button.addEventListener('click', () => closeBackdrop('createBackdrop')));
     $$('.modal-backdrop').forEach(backdrop => backdrop.addEventListener('click', event => { if (event.target === backdrop) closeBackdrop(backdrop.id); }));
     window.addEventListener('popstate', renderRoute);
   }
+  function initLandingCarousel() {
+    const slides = $$('.landing-slide'), dots = $$('.landing-dot');
+    if (!slides.length) return;
+    const names = ['JUJUTSU KAISEN', 'DEMON SLAYER', 'BLEACH', 'BLACK CLOVER'];
+    let active = 0, carouselTimer;
+    function show(index) {
+      active = (index + slides.length) % slides.length;
+      slides.forEach((slide, i) => slide.classList.toggle('active', i === active));
+      dots.forEach((dot, i) => dot.classList.toggle('active', i === active));
+      $('#landingSlideNumber').textContent = String(active + 1).padStart(2, '0');
+      $('#landingSlideName').textContent = names[active];
+    }
+    function restart() {
+      clearInterval(carouselTimer);
+      if (!matchMedia('(prefers-reduced-motion: reduce)').matches) carouselTimer = setInterval(() => show(active + 1), 6000);
+    }
+    dots.forEach((dot, i) => dot.addEventListener('click', () => { show(i); restart(); }));
+    $('#landingNext').addEventListener('click', () => { show(active + 1); restart(); });
+    $('#landingPrev').addEventListener('click', () => { show(active - 1); restart(); });
+    restart();
+  }
+  function initFeaturedRanking() {
+    const board = $('#featuredTierBoard');
+    if (!board) return;
+    const updateControls = () => $$('[data-tier]', board).forEach((row, index, rows) => {
+      $('[data-tier-move="up"]', row).disabled = index === 0;
+      $('[data-tier-move="down"]', row).disabled = index === rows.length - 1;
+    });
+    const reorder = (row, direction) => {
+      const sibling = direction === 'up' ? row.previousElementSibling : row.nextElementSibling;
+      if (!sibling) return false;
+      board.insertBefore(direction === 'up' ? row : sibling, direction === 'up' ? sibling : row);
+      return true;
+    };
+    $$('[data-tier-move]', board).forEach(button => button.addEventListener('click', () => requirePremium(() => {
+      if (reorder(button.closest('[data-tier]'), button.dataset.tierMove)) {
+        updateControls();
+        toast('Preview order changed for this session.');
+      }
+    })));
+    $$('.tier-name', board).forEach(input => input.addEventListener('click', () => requirePremium(() => {
+      input.readOnly = false;
+      input.focus();
+      input.select();
+    })));
+    $('#rateFeaturedRanking').addEventListener('click', () => requirePremium(() => toast('Your rating is saved in this preview only.')));
+    $('#premiumSignIn').addEventListener('click', () => {
+      closeBackdrop('premiumBackdrop');
+      if (!currentUser) openAuth();
+      else toast('Premium plan checkout is not connected yet.');
+    });
+    updateControls();
+  }
   document.addEventListener('DOMContentLoaded', () => { initTheme(); init(); });
+  document.addEventListener('DOMContentLoaded', () => { initLandingCarousel(); initFeaturedRanking(); });
 })();
 

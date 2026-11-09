@@ -23,7 +23,7 @@
       body: JSON.stringify({ data: {} })
     });
     const result = await response.json();
-    if (!response.ok || !result.access_token) throw new Error(result.msg || result.message || 'Could not start an anonymous FandomRoom session.');
+    if (!response.ok || !result.access_token) throw new Error(result.msg || result.message || 'Could not start an anonymous Fandom Room session.');
     return storeSession(result);
   }
   function storeSession(value) {

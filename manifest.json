@@ -1,15 +1,22 @@
 {
   "manifest_version": 3,
-  "name": "FandomRoom",
+  "name": "Fandom Room",
   "version": "0.1.0",
   "description": "Open the discussion for the anime you’re watching.",
+  "icons": {
+    "16": "logo/fandom-room-icon.png",
+    "32": "logo/fandom-room-icon.png",
+    "48": "logo/fandom-room-icon.png",
+    "128": "logo/fandom-room-icon.png"
+  },
   "permissions": ["sidePanel", "activeTab", "scripting", "tabs", "storage"],
   "host_permissions": ["https://zbayifekoqasimvqreav.supabase.co/*"],
   "background": {
     "service_worker": "service-worker.js"
   },
   "action": {
-    "default_title": "Scan this page and open its FandomRoom discussion"
+    "default_title": "Scan this page and open its Fandom Room discussion",
+    "default_icon": "logo/fandom-room-icon.png"
   },
   "side_panel": {
     "default_path": "extension.html"

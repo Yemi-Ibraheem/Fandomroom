@@ -1,4 +1,4 @@
--- FandomRoom poll and ranking threads. Safe to apply to projects that already
+-- Fandom Room poll and ranking threads. Safe to apply to projects that already
 -- have the discussion schema from 202611040001_talkanime_discussions.sql.
 
 create table if not exists public.threads (
