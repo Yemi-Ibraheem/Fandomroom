@@ -47,18 +47,54 @@
     const user = await response.json().catch(() => ({}));
     if (!response.ok || !user.id) throw new Error('That sign-in link has expired. Please sign in again.');
     storeSession({ access_token: accessToken, refresh_token: params.get('refresh_token') || '', expires_in: Number(params.get('expires_in') || 3600), user });
+    const pendingProfile = localStorage.getItem('fandomroom:pending-signup-profile');
+    if (pendingProfile) {
+      try {
+        await saveSignupProfile(JSON.parse(pendingProfile), accessToken);
+        localStorage.removeItem('fandomroom:pending-signup-profile');
+      } catch (error) {
+        throw new Error(`${error.message} Please complete signup again.`);
+      }
+    }
     history.replaceState(null, '', `${location.pathname}${location.search}`);
     return true;
   }
-  async function signUp(email, password) {
+  async function signUp(email, password, profile = {}) {
     const redirect = `${location.origin}${location.pathname}`;
-    const result = await authRequest(`signup?redirect_to=${encodeURIComponent(redirect)}`, { email, password, data: {} });
+    const result = await authRequest(`signup?redirect_to=${encodeURIComponent(redirect)}`, {
+      email, password, data: { username: profile.username, country: profile.country }
+    });
     if (result.access_token) storeSession(result);
     return { session: readSession(), needsEmailConfirmation: !result.access_token };
   }
   async function signIn(email, password) { return storeSession(await authRequest('token?grant_type=password', { email, password })); }
-  function signInWithGoogle() {
+  async function isUsernameAvailable(username) {
+    const rows = await request(`profiles?${params({ select: 'id', username: `eq.${username.toLowerCase()}`, limit: '1' })}`);
+    return rows.length === 0;
+  }
+  async function saveSignupProfile(profile, accessToken) {
+    const active = readSession();
+    const profileResponse = await fetch(`${baseUrl}/rest/v1/profiles?id=eq.${encodeURIComponent(active.user.id)}`, {
+      method: 'PATCH',
+      headers: { apikey: apiKey, Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+      body: JSON.stringify({ username: profile.username })
+    });
+    if (!profileResponse.ok) {
+      const error = await profileResponse.json().catch(() => ({}));
+      throw new Error(error.message || 'Could not save your username.');
+    }
+    const authResponse = await fetch(`${baseUrl}/auth/v1/user`, {
+      method: 'PUT',
+      headers: { apikey: apiKey, Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ data: { username: profile.username, country: profile.country } })
+    });
+    const authResult = await authResponse.json().catch(() => ({}));
+    if (!authResponse.ok) throw new Error(authResult.msg || authResult.message || 'Could not save your country.');
+  }
+  function signInWithGoogle(profile = null) {
     if (!baseUrl || !apiKey) throw new Error('Fandom Room sign-in is not configured yet.');
+    if (profile) localStorage.setItem('fandomroom:pending-signup-profile', JSON.stringify(profile));
+    else localStorage.removeItem('fandomroom:pending-signup-profile');
     const returnTo = `${location.origin}${location.pathname}${location.search}`;
     const authorize = new URL(`${baseUrl}/auth/v1/authorize`);
     authorize.searchParams.set('provider', 'google');
@@ -157,5 +193,5 @@
       method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ thread_id: id, parent_id: parentId, author_id: active.user.id, body })
     }, true);
   }
-  globalThis.FandomRoomWeb = { configured: Boolean(baseUrl && apiKey), getSession, resumeLinkSession, signUp, signIn, signInWithGoogle, signOut, createThread, listThreads, loadThread, loadMyResponse, pollResults, rankingResults, vote, rank, loadComments, addComment };
+  globalThis.FandomRoomWeb = { configured: Boolean(baseUrl && apiKey), getSession, resumeLinkSession, signUp, signIn, signInWithGoogle, isUsernameAvailable, signOut, createThread, listThreads, loadThread, loadMyResponse, pollResults, rankingResults, vote, rank, loadComments, addComment };
 })();

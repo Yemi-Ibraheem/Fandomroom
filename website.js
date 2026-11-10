@@ -7,7 +7,7 @@
   let currentThread = null;
   let currentUser = null;
   let pendingAction = null;
-  let authMode = 'signin';
+  let authMode = 'signup';
   let selectedPollItems = [];
   let rankedItems = [];
   let myResponse = [];
@@ -49,23 +49,31 @@
     if (!currentUser) { pendingAction = () => requirePremium(action); openAuth(); return; }
     openBackdrop('premiumBackdrop');
   }
-  function openAuth() {
-    authMode = 'signin'; updateAuthMode(); openBackdrop('authBackdrop'); $('#authEmail').focus();
+  function openAuth(mode = 'signup') {
+    authMode = mode; updateAuthMode(); openBackdrop('authBackdrop');
+    (authMode === 'signup' ? $('#authUsername') : $('#authEmail')).focus();
   }
   function updateAuthMode() {
     const signup = authMode === 'signup';
-    $('#authTitle').textContent = signup ? 'Create your Fandom Room account' : 'Welcome to Fandom Room';
+    $('#authTitle').textContent = signup ? 'Join Fandom Room' : 'Welcome back';
+    $('#authIntro').textContent = signup ? 'Create a room for the fandoms you love.' : 'Sign in to vote, rank, create threads, and reply.';
     $('#authSubmit').textContent = signup ? 'Create account' : 'Sign in';
     $('#authPassword').autocomplete = signup ? 'new-password' : 'current-password';
-    $('#authSwitchText').textContent = signup ? 'Already a member?' : 'New here?';
-    $('#authSwitch').textContent = signup ? 'Sign in' : 'Create an account';
+    $('#signupFields').hidden = !signup;
+    $('#authUsername').required = signup;
+    $('#authCountry').required = signup;
+    $('#authTabSignup').classList.toggle('active', signup);
+    $('#authTabSignup').setAttribute('aria-selected', String(signup));
+    $('#authTabSignin').classList.toggle('active', !signup);
+    $('#authTabSignin').setAttribute('aria-selected', String(!signup));
+    $('#authForm').setAttribute('aria-labelledby', signup ? 'authTabSignup' : 'authTabSignin');
     $('#authError').textContent = '';
   }
   async function syncHeader() {
     const session = await api.getSession(); currentUser = session?.user || null;
     const button = $('#authButton');
-    button.textContent = currentUser ? 'Sign out' : 'Sign in';
-    button.setAttribute('aria-label', currentUser ? 'Sign out of Fandom Room' : 'Sign in to Fandom Room');
+    button.textContent = currentUser ? 'Sign out' : 'Sign up';
+    button.setAttribute('aria-label', currentUser ? 'Sign out of Fandom Room' : 'Sign up for Fandom Room');
   }
   function routeToThread(id) {
     const url = new URL(location.href);
@@ -335,8 +343,12 @@
     $('#authSubmit').disabled = true; $('#authSubmit').textContent = authMode === 'signup' ? 'Creating…' : 'Signing in…';
     try {
       if (authMode === 'signup') {
-        const result = await api.signUp(email, password);
-        if (result.needsEmailConfirmation) { closeBackdrop('authBackdrop'); toast('Check your email to confirm your account, then sign in.'); return; }
+        const username = $('#authUsername').value.trim().toLowerCase();
+        const country = $('#authCountry').value.trim();
+        if (country.length < 2) throw new Error('Enter your country.');
+        if (!(await api.isUsernameAvailable(username))) throw new Error('That username is already taken. Choose another one.');
+        const result = await api.signUp(email, password, { username, country });
+        if (result.needsEmailConfirmation) { closeBackdrop('authBackdrop'); toast('Check your email to confirm your Fandom Room account.'); return; }
       } else await api.signIn(email, password);
       await syncHeader(); closeBackdrop('authBackdrop'); toast('You’re signed in.');
       const next = pendingAction; pendingAction = null; if (next) await next();
@@ -370,11 +382,23 @@
       await api.signOut(); await syncHeader(); if (currentThread) await renderThread(currentThread); toast('You’re signed out.');
     });
     $('#authForm').addEventListener('submit', submitAuth);
-    $('#googleAuth').addEventListener('click', () => {
+    $('#googleAuth').addEventListener('click', async () => {
       $('#authError').textContent = '';
-      try { api.signInWithGoogle(); } catch (error) { $('#authError').textContent = niceError(error); }
+      try {
+        if (authMode === 'signup') {
+          for (const field of [$('#authUsername'), $('#authCountry')]) {
+            if (!field.checkValidity()) { field.reportValidity(); return; }
+          }
+          const username = $('#authUsername').value.trim().toLowerCase();
+          const country = $('#authCountry').value.trim();
+          if (country.length < 2) throw new Error('Enter your country.');
+          if (!(await api.isUsernameAvailable(username))) throw new Error('That username is already taken. Choose another one.');
+          api.signInWithGoogle({ username, country });
+        } else api.signInWithGoogle();
+      } catch (error) { $('#authError').textContent = niceError(error); }
     });
-    $('#authSwitch').addEventListener('click', () => { authMode = authMode === 'signin' ? 'signup' : 'signin'; updateAuthMode(); });
+    $('#authTabSignup').addEventListener('click', () => { authMode = 'signup'; updateAuthMode(); });
+    $('#authTabSignin').addEventListener('click', () => { authMode = 'signin'; updateAuthMode(); });
     $('#createButton').addEventListener('click', () => requireAuth(openCreate));
     $('#createForm').addEventListener('submit', event => { event.preventDefault(); requireAuth(() => submitCreate(event)); });
     $('#createType').addEventListener('change', event => {

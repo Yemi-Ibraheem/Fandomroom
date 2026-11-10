@@ -20,11 +20,17 @@ Vercel serves the static website from `index.html`, including the Fandom Room po
 The website and discussion panel use the Supabase project `zbayifekoqasimvqreav` for accounts, polls, rankings, images, replies, and the extension's anime discussions. To finish enabling it:
 
 1. In the Supabase Dashboard for that project, enable **Anonymous Sign-Ins** under Authentication settings.
-2. Run [`supabase/migrations/202611040001_talkanime_discussions.sql`](supabase/migrations/202611040001_talkanime_discussions.sql) and [`supabase/migrations/202611080001_fandomroom_threads.sql`](supabase/migrations/202611080001_fandomroom_threads.sql) in the SQL Editor, in that order.
+2. Run [`supabase/migrations/202611040001_talkanime_discussions.sql`](supabase/migrations/202611040001_talkanime_discussions.sql), [`supabase/migrations/202611080001_fandomroom_threads.sql`](supabase/migrations/202611080001_fandomroom_threads.sql), [`supabase/migrations/202611100001_email_notifications.sql`](supabase/migrations/202611100001_email_notifications.sql), and [`supabase/migrations/202611110001_signup_profile_fields.sql`](supabase/migrations/202611110001_signup_profile_fields.sql) in the SQL Editor, in that order. Skip any migrations you have already run.
 3. Copy the project's **publishable key** (or legacy `anon` key) into `publishableKey` in [`supabase/config.js`](supabase/config.js). This key is intended to be public; never use a `service_role` or secret key in the extension.
 4. Reload Fandom Room from `chrome://extensions` and refresh the viewing tab.
 
 The extension creates an anonymous Supabase identity and keeps its session in the extension's local browser storage. Anonymous identities are not recoverable on another device or after browser data is cleared. If the publishable key is absent, the extension remains in its local demo mode.
+
+The website signup form asks for a username and country. Usernames are public and unique without regard to capitalization. Country is saved privately in the account's Auth metadata.
+
+## Customize the signup confirmation email
+
+The signup confirmation is also the welcome email. In Supabase Dashboard → Authentication → Email Templates → **Confirm signup**, set the subject to `Welcome to Fandom Room — confirm your email` and paste the HTML from [`supabase/email-templates/confirm-signup.html`](supabase/email-templates/confirm-signup.html) into the message body. The template includes the required `{{ .ConfirmationURL }}` link and a short introduction to polls, rankings, and discussions. The Supabase Auth SMTP sender should be `info@fandomroom.com` with sender name `Fandom Room`.
 
 ## Enable Google sign-in
 
