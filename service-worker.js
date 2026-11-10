@@ -1,9 +1,10 @@
-chrome.runtime.onInstalled.addListener(() => {
-  chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: false });
-});
+// Let Chrome open the side panel directly from the toolbar click. Calling
+// sidePanel.open() after an async page scan loses Chrome's user gesture.
+chrome.sidePanel.setPanelBehavior({ openPanelOnActionClick: true })
+  .catch((error) => console.error('Could not enable toolbar side panel:', error));
 
 chrome.action.onClicked.addListener(async (tab) => {
-  if (!tab?.id || !tab.windowId) return;
+  if (!tab?.id || tab.windowId == null) return;
   let scan = {
     supported: false,
     title: '',
@@ -45,7 +46,6 @@ chrome.action.onClicked.addListener(async (tab) => {
   }
 
   await chrome.storage.local.set({ currentScan: scan });
-  await chrome.sidePanel.open({ windowId: tab.windowId });
 });
 
 function identifyAnime(page, hostname) {
