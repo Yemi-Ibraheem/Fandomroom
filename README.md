@@ -6,10 +6,10 @@ Fandom Room is the public discussion site at https://www.fandomroom.com, with a 
 
 1. Open `chrome://extensions` in Chrome and turn on **Developer mode**.
 2. If Fandom Room is already listed, click its **Reload** button. Otherwise, click **Load unpacked** and choose this project folder.
-3. Refresh the Crunchyroll or AnimeHeaven tab you want to discuss.
-4. Click the Fandom Room toolbar icon. It scans the active page and opens the side panel to the detected anime or episode discussion.
+3. Open the viewing page you want to discuss.
+4. Click the Fandom Room toolbar icon to scan the active tab and open its title or episode discussion.
 
-The extension reads the active page only when you click its toolbar icon. It currently checks Crunchyroll and AnimeHeaven. If a page does not expose a recognizable title or episode, the panel reports that instead of guessing.
+Fandom Room can scan HTTP and HTTPS viewing pages across sites. **Refresh & scan** rereads the current tab while Chrome allows access. **Edit title or episode** lets you correct a match or enter details the page does not expose. Discussions use the title, season, and episode to find a room. The first comment is saved to that room.
 
 ## Publish the website
 

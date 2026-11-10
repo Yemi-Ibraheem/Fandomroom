@@ -136,6 +136,101 @@
       .post-button { padding-inline: 13px; }
     }
     @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+    /* Compact side-panel layout: show the room, rating, and conversation first. */
+    .page { padding-inline: 12px; }
+    .site-header { height: 58px; margin-inline: -12px; padding-inline: 12px; }
+    .refresh-scan { min-height: 38px; padding: 0 12px; border: 0; border-radius: 8px; background: var(--lime); color: var(--lime-ink); font-size: 11px; font-weight: 750; white-space: nowrap; box-shadow: 0 2px 0 #a1c93c; }
+    .refresh-scan:hover { filter: brightness(1.06); }
+    .refresh-scan:disabled { opacity: .7; cursor: progress; }
+    .brand img.brand-icon { display: none; }
+    .brand-name { display: inline; font-family: Manrope, Inter, ui-sans-serif, system-ui, sans-serif; font-size: 19px; font-weight: 800; letter-spacing: -.8px; }
+    .profile, .crumb-search, .head-actions, .mod-note:not(#scanStatus) { display: none !important; }
+    .intro { padding-top: 0; }
+    .scan-strip { min-height: 37px; display: flex; align-items: center; gap: 8px; padding: 7px 4px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 11px; }
+    .no-room > :not(#scanStatus):not(#manualScan) { display: none; }
+    .scan-edit { padding: 7px 4px; color: var(--muted); font-size: 11px; }
+    .scan-edit summary { cursor: pointer; width: fit-content; }
+    .scan-edit form { display: grid; gap: 8px; margin-top: 8px; }
+    .scan-edit label { display: grid; gap: 4px; }
+    .scan-edit input { min-width: 0; width: 100%; padding: 7px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--text); font: inherit; }
+    .scan-edit-numbers { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .scan-edit button { justify-self: start; padding: 7px 10px; border: 0; border-radius: 6px; background: var(--lime); color: var(--lime-ink); font: inherit; font-weight: 700; }
+    .tab[hidden] { display: none; }
+    .scan-dot { color: var(--lime); font-size: 13px; }
+    .scan-copy { min-width: 0; display: flex; align-items: baseline; gap: 7px; flex-wrap: wrap; }
+    .scan-copy strong { color: var(--text); font-size: 11px; font-weight: 650; }
+    .scan-copy small { color: var(--dim); font-size: 10px; }
+    .rating-row { min-height: 68px; display: flex; align-items: center; justify-content: space-between; gap: 10px; border-bottom: 1px solid var(--line); }
+    .rating-row[hidden] { display: none; }
+    .rating-summary { min-width: 105px; display: grid; grid-template-columns: 30px auto; grid-template-rows: auto auto; align-items: center; column-gap: 5px; }
+    .rating-label { grid-column: 1 / -1; color: var(--muted); font-size: 9px; font-weight: 650; letter-spacing: .45px; text-transform: uppercase; margin-bottom: 2px; }
+    .rating-star { grid-row: 2; color: var(--lime); font-size: 26px; line-height: 1; }
+    .rating-value { color: var(--text); font-size: 20px; font-weight: 750; line-height: 1.05; white-space: nowrap; }
+    .rating-denom { color: var(--muted); font-size: 10px; font-weight: 450; }
+    .rating-count { grid-column: 2; color: var(--dim); font-size: 9px; white-space: nowrap; }
+    .rate-button { min-height: 33px; padding: 0 10px; border: 1px solid #484650; border-radius: 7px; background: #22212b; color: var(--lime); display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+    .rate-button:hover { border-color: var(--lime); background: #292a25; }
+    .follow-button { min-height: 34px; padding: 0 11px; border-radius: 7px; font-size: 11px; white-space: nowrap; }
+    .tabs { margin-top: 0; }
+    .tab { min-height: 42px; padding-inline: 12px; font-size: 13px; }
+    .room-toolbar { min-height: 36px; font-size: 10px; }
+    .room-stats { gap: 9px; }
+    .sort-select { font-size: 10px; }
+    .feed { padding-bottom: 100px; }
+    .message { padding: 13px 0; grid-template-columns: 32px minmax(0, 1fr); gap: 10px; }
+    .avatar { width: 32px; height: 32px; }
+    .message-text { font-size: 14px; }
+    .composer { bottom: 8px; margin: 0 -3px; padding: 7px 10px 6px; border-radius: 13px; background: #1b1b24f5; backdrop-filter: blur(12px); }
+    .composer textarea { min-height: 43px; max-height: 90px; padding: 7px 2px; font-size: 11px; resize: none; }
+    .composer:focus-within textarea { min-height: 62px; }
+    .composer-hint { display: none; margin: 0 2px 6px; color: var(--muted); font-size: 10px; }
+    .composer:focus-within .composer-hint { display: block; }
+    .composer-bottom { min-height: 36px; gap: 7px; }
+    .spoiler-toggle { font-size: 10px; }
+    .radio { width: 14px; height: 14px; }
+    .post-button { min-height: 34px; padding-inline: 12px; font-size: 10px; }
+    .rate-backdrop { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 18px; background: #08090dcc; backdrop-filter: blur(4px); }
+    .rate-backdrop[hidden] { display: none; }
+    .rate-dialog { position: relative; width: min(360px, 100%); padding: 22px 20px 18px; border: 1px solid #454450; border-radius: 15px; background: #1b1b24; box-shadow: 0 20px 60px #0009; animation: appear .18s ease both; }
+    .rate-dialog h2 { margin: 0 28px 9px 0; font-size: 18px; letter-spacing: -.3px; }
+    .rate-dialog p { margin: 0; color: #d0ced8; font-size: 13px; line-height: 1.55; }
+    .rate-close { position: absolute; top: 10px; right: 11px; width: 32px; height: 32px; border: 0; border-radius: 7px; background: transparent; color: var(--muted); font-size: 21px; }
+    .rate-close:hover { background: var(--surface-raised); color: var(--text); }
+    .rate-dialog .rate-dismiss { display: block; width: 100%; min-height: 38px; margin-top: 18px; border: 0; border-radius: 8px; background: var(--lime); color: var(--lime-ink); font-size: 12px; font-weight: 700; }
+    @media (max-width: 420px) {
+      .page { padding-inline: 10px; }
+      .site-header { margin-inline: -10px; padding-inline: 10px; }
+      .rating-row { gap: 7px; }
+      .rating-summary { min-width: 90px; grid-template-columns: 25px auto; }
+      .rating-star { font-size: 23px; }
+      .rating-value { font-size: 18px; }
+      .follow-button { padding-inline: 8px; }
+    }
+    .feed { padding-bottom: 2px; }
+    .composer { position: relative; bottom: auto; display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 9px; margin: 4px -2px 12px; padding: 8px 3px 6px; border: 0; border-radius: 0; background: transparent; box-shadow: none; backdrop-filter: none; }
+    .composer-avatar { grid-column: 1; grid-row: 1 / span 2; width: 28px; height: 28px; display: grid; place-items: center; margin-top: 1px; border-radius: 50%; background: linear-gradient(140deg, #c86bff, #ffbd4c); color: white; font-size: 11px; font-weight: 750; }
+    .composer textarea { grid-column: 2; grid-row: 1; min-height: 30px; max-height: 110px; padding: 3px 0 6px; resize: none; border: 0; border-bottom: 1px solid #55545e; border-radius: 0; color: var(--text); font-size: 12px; }
+    .composer textarea::placeholder { color: #9a99a5; }
+    .composer.is-expanded textarea { min-height: 58px; border-bottom-color: #777580; }
+    .composer-hint { display: none; grid-column: 2; margin: 0; color: var(--dim); font-size: 9px; }
+    .composer.is-expanded .composer-hint { display: block; }
+    .composer-bottom { grid-column: 2; min-height: 33px; display: none; align-items: center; justify-content: space-between; gap: 8px; border: 0; }
+    .composer.is-expanded .composer-bottom { display: flex; }
+    .composer-tools, .composer-actions { display: flex; align-items: center; gap: 7px; }
+    .composer .spoiler-toggle { min-height: 30px; gap: 5px; padding: 0 2px; color: #cac9d2; font-size: 10px; }
+    .composer .spoiler-toggle[aria-pressed="true"] { color: var(--lime); }
+    .composer .radio { width: 13px; height: 13px; }
+    .emoji-button { width: 28px; height: 28px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: #d6d5dd; font-size: 17px; }
+    .emoji-button:hover, .emoji-button[aria-expanded="true"] { background: #292832; color: var(--lime); }
+    .emoji-picker { position: absolute; left: 40px; bottom: 48px; display: none; gap: 3px; padding: 5px; border: 1px solid #42414c; border-radius: 8px; background: #24232d; box-shadow: 0 8px 20px #0008; }
+    .emoji-picker.open { display: flex; }
+    .emoji-picker button { width: 30px; height: 30px; border: 0; border-radius: 5px; background: transparent; font-size: 17px; }
+    .emoji-picker button:hover { background: #34333f; }
+    .composer .cancel-button, .composer .post-button { min-height: 30px; padding: 0 10px; border-radius: 6px; font-size: 10px; }
+    .composer .cancel-button { border: 0; background: transparent; color: var(--muted); }
+    .composer .cancel-button:hover { color: var(--text); }
+    .composer .post-button:disabled { filter: grayscale(1); opacity: .55; cursor: default; }
+    .composer .post-button:not(:disabled) { font-weight: 700; }
   </style>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -146,27 +241,32 @@
 <body>
   <div class="page">
     <header class="site-header">
-      <a class="brand" href="#" aria-label="Fandom Room home"><img class="brand-icon" src="logo/fandom-room-icon.png" alt="" width="36" height="36"><span class="brand-name">fandom <span>room</span></span></a>
-      <button class="profile" id="profile" aria-label="Profile menu">N</button>
+      <a class="brand" href="#" aria-label="Fandom Room home"><img class="brand-icon" src="logo/fandom-room-icon.png" alt="" width="36" height="36"><span class="brand-name">Fandom <span>room</span></span></a>
+      <button class="refresh-scan" id="refreshScan" type="button">↻&nbsp; Refresh &amp; scan</button>
     </header>
-    <div class="crumb-search">
-      <div class="crumbs" aria-label="Breadcrumb"><span>Discussions</span><i>/</i><span>Jujutsu Kaisen</span><i>/</i><b id="crumbTitle">Episode 07</b></div>
-      <div class="search-wrap"><input class="search" id="search" type="search" placeholder="Search titles" aria-label="Search titles"><div class="search-results" id="searchResults"></div></div>
-    </div>
     <main>
-      <div class="mod-note" id="scanStatus" role="status" aria-live="polite"><span class="mod-icon">◉</span><div><strong id="scanTitle">Waiting for a page scan</strong><p id="scanMessage">Open an anime page on Crunchyroll or AnimeHeaven, then click the Fandom Room toolbar button.</p></div></div>
-      <section class="intro" aria-labelledby="roomTitle">
-        <div class="eyebrow" id="roomType">Episode discussion</div>
-        <h1 id="roomTitle">Episode 07 - The Culling Games</h1>
-        <p class="subheading" id="seriesSubtitle">Jujutsu Kaisen - Season 2</p>
-        <div class="head-actions">
-          <button class="outline-button" id="shareButton">↗&nbsp; Share</button>
-          <button class="follow-button" id="followButton" aria-pressed="false"><span>＋</span> Follow</button>
+      <aside class="scan-strip" id="scanStatus" role="status" aria-live="polite"><span class="scan-dot" aria-hidden="true">●</span><span class="scan-copy"><strong id="scanTitle">Waiting for a page scan</strong><small id="scanMessage">Open a viewing page, then click Fandom Room.</small></span></aside>
+      <details class="scan-edit" id="manualScan" hidden>
+        <summary id="manualScanLabel">Enter title and episode</summary>
+        <form id="manualScanForm">
+          <label>Title <input id="manualTitle" type="text" maxlength="180" required></label>
+          <div class="scan-edit-numbers">
+            <label>Season (optional) <input id="manualSeason" type="text" inputmode="numeric" pattern="[0-9]{1,3}"></label>
+            <label>Episode (optional) <input id="manualEpisode" type="text" inputmode="decimal" pattern="[0-9]{1,4}(\.[0-9]{1,2})?"></label>
+          </div>
+          <button type="submit">Open discussion</button>
+        </form>
+      </details>
+      <section class="rating-row" id="ratingBlock" aria-label="Episode rating">
+        <div class="rating-summary" aria-label="No episode rating yet">
+          <span class="rating-label">Episode rating</span><span class="rating-star" aria-hidden="true">★</span><span><strong class="rating-value">—</strong><span class="rating-denom"> / 10</span><small class="rating-count">No ratings yet</small></span>
         </div>
+        <button class="rate-button" id="rateButton" type="button" aria-haspopup="dialog"><span aria-hidden="true">☆</span> Rate episode</button>
+        <button class="follow-button" id="followButton" aria-pressed="false"><span>＋</span> Follow show</button>
       </section>
       <nav class="tabs" aria-label="Discussion scope">
-        <button class="tab active" id="episodeTab" role="tab" aria-selected="true">Discussion</button>
-        <button class="tab" id="animeTab" role="tab" aria-selected="false">Discuss the whole anime</button>
+        <button class="tab active" id="episodeTab" role="tab" aria-selected="true">Episode discussion</button>
+        <button class="tab" id="animeTab" role="tab" aria-selected="false">Whole show discussion</button>
       </nav>
       <div class="room-toolbar">
         <div class="room-stats"><strong id="messageCount">128 messages</strong><span id="onlineCount">25 super fans here</span></div>
@@ -175,18 +275,34 @@
           <option value="oldest">Oldest first&nbsp; ⌄</option>
         </select>
       </div>
-      <aside class="mod-note" aria-live="polite">
-        <span class="mod-icon">⦿</span><div><strong id="noteTitle">Room note from the mods</strong><p id="noteText">Keep discussion to episode 7. Mark anything beyond this episode as a spoiler so everyone can enjoy the reveal at their own pace.</p></div>
-      </aside>
-      <section class="feed" id="feed" aria-label="Discussion messages" aria-live="polite"></section>
       <form class="composer" id="composer">
-        <textarea id="messageInput" placeholder="What did you think of the episode..." aria-label="Write a message" maxlength="2000"></textarea>
+        <div class="composer-avatar" aria-hidden="true">N</div>
+        <textarea id="messageInput" placeholder="What did you think about the episode?" aria-label="What did you think about the episode?" maxlength="2000" rows="1"></textarea>
+        <p class="composer-hint" id="composerHint">Leaving a spoiler? Mark it before posting.</p>
         <div class="composer-bottom">
-          <button type="button" class="spoiler-toggle" id="spoilerToggle" aria-pressed="false"><span class="radio"></span> Spoiler</button>
-          <button type="submit" class="post-button">Post message&nbsp; ↗</button>
+          <div class="composer-tools">
+            <button type="button" class="spoiler-toggle" id="spoilerToggle" aria-pressed="false"><span class="radio"></span> Spoiler</button>
+            <button type="button" class="emoji-button" id="emojiButton" aria-label="Add emoji" aria-expanded="false">☺</button>
+          </div>
+          <div class="composer-actions">
+            <button type="button" class="cancel-button" id="cancelComment">Cancel</button>
+            <button type="submit" class="post-button" id="postComment" disabled>Comment</button>
+          </div>
+        </div>
+        <div class="emoji-picker" id="emojiPicker" role="group" aria-label="Choose an emoji">
+          <button type="button" aria-label="Smiling face">😊</button><button type="button" aria-label="Laughing">😂</button><button type="button" aria-label="Heart">❤️</button><button type="button" aria-label="Surprised">😮</button><button type="button" aria-label="Crying">😭</button>
         </div>
       </form>
+      <section class="feed" id="feed" aria-label="Discussion messages" aria-live="polite"></section>
     </main>
+  </div>
+  <div class="rate-backdrop" id="rateGate" hidden>
+    <section class="rate-dialog" role="dialog" aria-modal="true" aria-labelledby="rateTitle" aria-describedby="rateCopy" tabindex="-1">
+      <button class="rate-close" id="rateClose" type="button" aria-label="Close">×</button>
+      <h2 id="rateTitle">Ratings from real fans</h2>
+      <p id="rateCopy">To help prevent review bombing and keep episode ratings as true as possible, only Super Members can rate an episode. Subscribe to become a Super Member.</p>
+      <button class="rate-dismiss" id="rateDismiss" type="button">Got it</button>
+    </section>
   </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <script src="supabase/config.js" defer></script>

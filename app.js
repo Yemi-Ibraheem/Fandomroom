@@ -19,9 +19,13 @@
     };
     const $ = (selector, root = document) => root.querySelector(selector);
     const feed = $('#feed');
+    const extensionMode = Boolean(globalThis.chrome?.runtime?.id);
+    let roomReady = !extensionMode;
+    let mediaKind = 'series';
     let scope = 'episode';
     let markedSpoiler = false;
     let toastTimer;
+    let ratingReturnFocus = null;
     let messages = FandomRoomBackend.configured ? { episode: [], anime: [] } : {
       episode: read(episodeKey(), seed.episode),
       anime: read(animeKey(), seed.anime)
@@ -37,12 +41,11 @@
     }
     function escapeText(value) { const div = document.createElement('div'); div.textContent = value; return div.innerHTML; }
     function render() {
-      const query = $('#search').value.trim().toLowerCase();
       const newestFirst = $('#sortOrder').value === 'newest';
       const list = [...messages[scope]].sort((a, b) => newestFirst ? Date.parse(b.createdAt || '') - Date.parse(a.createdAt || '') : Date.parse(a.createdAt || '') - Date.parse(b.createdAt || ''));
-      const filtered = query ? list.filter(m => `${m.user} ${m.text}`.toLowerCase().includes(query)) : list;
+      const filtered = list;
       feed.innerHTML = '';
-      if (!filtered.length) { feed.innerHTML = `<div class="empty">${query ? 'No messages match your search.' : 'No messages here yet. Start the conversation.'}</div>`; }
+      if (!filtered.length) { feed.innerHTML = '<div class="empty">No messages here yet. Start the conversation.</div>'; }
       for (const message of filtered) feed.appendChild(messageElement(message));
       const count = FandomRoomBackend.configured ? list.length : scope === 'episode' ? 128 + Math.max(0, messages.episode.length - seed.episode.length) : 412 + Math.max(0, messages.anime.length - seed.anime.length);
       $('#messageCount').textContent = `${count} ${scope === 'episode' ? 'messages' : 'posts'}`;
@@ -78,25 +81,32 @@
       return article;
     }
     function setScope(next) {
-      scope = next;
+      scope = next === 'episode' && currentEpisode ? 'episode' : 'anime';
       const whole = scope === 'anime';
+      $('#episodeTab').hidden = !currentEpisode;
       $('#episodeTab').classList.toggle('active', !whole); $('#episodeTab').setAttribute('aria-selected', String(!whole));
       $('#animeTab').classList.toggle('active', whole); $('#animeTab').setAttribute('aria-selected', String(whole));
-      $('#roomType').textContent = whole ? 'Whole anime discussion' : 'Episode discussion';
-      $('#roomTitle').textContent = whole ? `${currentAnime} - Whole anime discussion` : `${currentEpisode} discussion`;
-      $('#seriesSubtitle').textContent = whole ? `All seasons and episodes · ${currentAnime}` : `${currentAnime}${currentSeason ? ` - ${currentSeason}` : ''}`;
-      $('#crumbTitle').textContent = whole ? 'Whole anime' : currentEpisode;
-      $('#noteTitle').textContent = whole ? 'Room note from the mods' : 'Room note from the mods';
-      $('#noteText').textContent = whole ? 'This is the conversation for the whole anime. Mark major plot reveals as spoilers so fans can browse at their own pace.' : `Keep discussion to ${currentEpisode}. Mark anything beyond this episode as a spoiler so everyone can enjoy the reveal at their own pace.`;
+      $('#animeTab').textContent = mediaKind === 'movie' ? 'Movie discussion'
+        : mediaKind === 'video' ? 'Video discussion' : 'Whole show discussion';
+      const ratingSubject = whole ? mediaKind === 'movie' ? 'movie' : mediaKind === 'video' ? 'video' : 'show' : 'episode';
+      $('#ratingBlock').setAttribute('aria-label', `${ratingSubject[0].toUpperCase()}${ratingSubject.slice(1)} rating`);
+      $('.rating-label').textContent = `${ratingSubject} rating`;
+      $('.rating-summary').setAttribute('aria-label', `No ${ratingSubject} rating yet`);
+      $('#rateButton').innerHTML = `<span aria-hidden="true">☆</span> Rate ${ratingSubject}`;
+      $('#rateCopy').textContent = `To help prevent review bombing and keep ${ratingSubject} ratings as true as possible, only Super Members can rate ${ratingSubject === 'episode' ? 'an' : 'a'} ${ratingSubject}. Subscribe to become a Super Member.`;
       $('#onlineCount').textContent = FandomRoomBackend.configured ? 'Shared community room' : whole ? '58 super fans here' : '25 super fans here';
-      $('#messageInput').placeholder = whole ? `What do you think of ${currentAnime}...` : `What did you think of ${currentEpisode}...`;
-      $('#search').value = ''; $('#searchResults').classList.remove('show'); render();
+      const commentPrompt = whole
+        ? mediaKind === 'movie' ? 'What did you think about the movie?' : mediaKind === 'video' ? 'What did you think about the video?' : 'What did you think about the show?'
+        : 'What did you think about the episode?';
+      $('#messageInput').placeholder = commentPrompt;
+      $('#messageInput').setAttribute('aria-label', commentPrompt);
+      render();
       history.replaceState({}, '', whole ? '#anime' : '#episode-07');
       syncBackendRoom();
     }
     let roomRequest = 0;
     async function syncBackendRoom() {
-      if (!FandomRoomBackend.configured) return;
+      if (!roomReady || !FandomRoomBackend.configured) return;
       const requestId = ++roomRequest;
       const room = { animeSlug, scope, season: currentSeason, episode: currentEpisode };
       try {
@@ -104,90 +114,203 @@
         if (requestId !== roomRequest || animeSlug !== room.animeSlug || scope !== room.scope) return;
         messages[scope] = posts;
         const button = $('#followButton'); button.setAttribute('aria-pressed', String(following)); button.classList.toggle('is-following', following);
-        button.innerHTML = following ? '✓&nbsp; Following' : '<span>＋</span> Follow';
+        button.innerHTML = following ? '✓&nbsp; Following' : '<span>＋</span> Follow show';
         render();
       } catch (error) { if (requestId === roomRequest) toast(error.message); }
     }
     $('#episodeTab').addEventListener('click', () => setScope('episode'));
     $('#animeTab').addEventListener('click', () => setScope('anime'));
     $('#sortOrder').addEventListener('change', render);
+    const composer = $('#composer');
+    const messageInput = $('#messageInput');
+    const postComment = $('#postComment');
+    const emojiPicker = $('#emojiPicker');
+    function expandComposer() { composer.classList.add('is-expanded'); }
+    function resetComposer() {
+      messageInput.value = '';
+      messageInput.style.height = '';
+      markedSpoiler = false;
+      $('#spoilerToggle').setAttribute('aria-pressed', 'false');
+      postComment.disabled = true;
+      composer.classList.remove('is-expanded');
+      emojiPicker.classList.remove('open');
+      $('#emojiButton').setAttribute('aria-expanded', 'false');
+      messageInput.blur();
+    }
+    messageInput.addEventListener('focus', expandComposer);
+    messageInput.addEventListener('input', () => {
+      expandComposer();
+      postComment.disabled = !messageInput.value.trim();
+      messageInput.style.height = 'auto';
+      messageInput.style.height = `${Math.min(messageInput.scrollHeight, 110)}px`;
+    });
+    $('#cancelComment').addEventListener('click', resetComposer);
+    $('#emojiButton').addEventListener('click', () => {
+      expandComposer();
+      const isOpen = emojiPicker.classList.toggle('open');
+      $('#emojiButton').setAttribute('aria-expanded', String(isOpen));
+    });
+    emojiPicker.addEventListener('click', event => {
+      const button = event.target.closest('button');
+      if (!button) return;
+      expandComposer();
+      const start = messageInput.selectionStart;
+      const end = messageInput.selectionEnd;
+      messageInput.setRangeText(button.textContent, start, end, 'end');
+      messageInput.dispatchEvent(new Event('input', { bubbles: true }));
+      emojiPicker.classList.remove('open');
+      $('#emojiButton').setAttribute('aria-expanded', 'false');
+      messageInput.focus();
+    });
     $('#spoilerToggle').addEventListener('click', e => {
       markedSpoiler = !markedSpoiler; e.currentTarget.setAttribute('aria-pressed', String(markedSpoiler));
-      $('#messageInput').placeholder = markedSpoiler ? 'Write your spoiler here…' : (scope === 'anime' ? `What do you think of ${currentAnime}...` : `What did you think of ${currentEpisode}...`);
+      expandComposer();
     });
-    $('#composer').addEventListener('submit', async e => {
+    composer.addEventListener('submit', async e => {
       e.preventDefault(); const input = $('#messageInput'); const value = input.value.trim();
+      if (!roomReady) return;
       if (!value) { input.focus(); toast('Write a message before posting.'); return; }
       if (FandomRoomBackend.configured) {
         try {
           await FandomRoomBackend.createPost({ animeSlug, scope, season: currentSeason, episode: currentEpisode, body: value, spoiler: markedSpoiler });
-          input.value = ''; markedSpoiler = false; $('#spoilerToggle').setAttribute('aria-pressed', 'false');
+          resetComposer();
           await syncBackendRoom(); toast('Your message was posted.');
         } catch (error) { toast(error.message); }
         return;
       }
       const posted = { id: `local-${Date.now()}`, user: 'nao', initials: 'N', avatar: 'me', time: 'just now', text: value, spoiler: markedSpoiler, likes: 0, replies: [] };
-      messages[scope].push(posted); save(); input.value = ''; markedSpoiler = false; $('#spoilerToggle').setAttribute('aria-pressed', 'false');
+      messages[scope].push(posted); save(); resetComposer();
       setScope(scope); toast('Your message was posted.');
     });
     $('#followButton').addEventListener('click', async e => {
       const following = e.currentTarget.getAttribute('aria-pressed') !== 'true'; e.currentTarget.setAttribute('aria-pressed', String(following));
-      e.currentTarget.classList.toggle('is-following', following); e.currentTarget.innerHTML = following ? '✓&nbsp; Following' : '<span>＋</span> Follow';
+      e.currentTarget.classList.toggle('is-following', following); e.currentTarget.innerHTML = following ? '✓&nbsp; Following' : '<span>＋</span> Follow show';
       if (FandomRoomBackend.configured) {
         try { await FandomRoomBackend.setFollowing(animeSlug, following); }
-        catch (error) { e.currentTarget.setAttribute('aria-pressed', String(!following)); e.currentTarget.classList.toggle('is-following', !following); e.currentTarget.innerHTML = !following ? '✓&nbsp; Following' : '<span>＋</span> Follow'; toast(error.message); }
+        catch (error) { e.currentTarget.setAttribute('aria-pressed', String(!following)); e.currentTarget.classList.toggle('is-following', !following); e.currentTarget.innerHTML = !following ? '✓&nbsp; Following' : '<span>＋</span> Follow show'; toast(error.message); }
         return;
       }
       try { localStorage.setItem(followKey(), String(following)); } catch {}
       toast(following ? `${currentAnime} added to your following list.` : `${currentAnime} removed from your following list.`);
     });
     function applyScan(scan) {
-      if (!scan) return;
-      $('#scanTitle').textContent = scan.title ? `${scan.title}${scan.episode ? ` · ${scan.episode}` : ''}` : scan.site || 'Page scan';
-      $('#scanMessage').textContent = scan.message || 'Page scanned.';
-      $('#scanStatus').style.display = 'grid';
-      if (!scan.title) return;
+      const detectedTitle = scan.title?.trim() || '';
+      const details = [detectedTitle, scan.season, scan.episode].filter(Boolean);
+      $('#scanTitle').textContent = detectedTitle ? details.join(' · ')
+        : scan.supported ? 'No match yet' : 'Page could not be scanned';
+      $('#scanMessage').textContent = scan.message;
+      $('#manualScan').hidden = Boolean(detectedTitle);
+      $('#manualScan').open = !detectedTitle;
+      $('#manualTitle').value = detectedTitle;
+      $('#manualSeason').value = scan.season?.replace(/^Season /, '') || '';
+      $('#manualEpisode').value = scan.episode?.replace(/^Episode /, '') || '';
+      if (!detectedTitle) return;
+
+      roomReady = true;
+      $('main').classList.remove('no-room');
       const previousSlug = animeSlug;
       const previousEpisode = currentEpisode;
       const previousSeason = currentSeason;
-      currentAnime = scan.title;
-      animeSlug = scan.title.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'anime';
-      currentEpisode = scan.episode || 'Episode 01';
+      currentAnime = detectedTitle;
+      const normalizedTitle = detectedTitle.toLowerCase().normalize('NFKD');
+      const letters = normalizedTitle.replace(/\p{M}/gu, '');
+      const hasOtherScript = [...letters].some((letter) => /[\p{L}\p{N}]/u.test(letter) && !/[a-z0-9]/.test(letter));
+      animeSlug = (hasOtherScript ? letters.replace(/[^\p{L}\p{N}]+/gu, '-')
+        : normalizedTitle.replace(/[^a-z0-9]+/g, '-')).replace(/^-|-$/g, '') || 'untitled';
+      currentEpisode = scan.episode || '';
       currentSeason = scan.season || '';
+      mediaKind = scan.kind || 'series';
       if (animeSlug !== previousSlug || currentEpisode !== previousEpisode || currentSeason !== previousSeason) {
+        resetComposer();
         const demoRoom = animeSlug === 'jujutsu-kaisen' && currentEpisode === 'Episode 07' && currentSeason === 'Season 2';
         messages = FandomRoomBackend.configured ? { episode: [], anime: [] } : { episode: read(episodeKey(), demoRoom ? seed.episode : []), anime: read(animeKey(), animeSlug === 'jujutsu-kaisen' ? seed.anime : []) };
         if (!FandomRoomBackend.configured) try {
           const following = localStorage.getItem(followKey()) === 'true';
           $('#followButton').setAttribute('aria-pressed', String(following));
           $('#followButton').classList.toggle('is-following', following);
-          $('#followButton').innerHTML = following ? '✓&nbsp; Following' : '<span>＋</span> Follow';
+          $('#followButton').innerHTML = following ? '✓&nbsp; Following' : '<span>＋</span> Follow show';
         } catch {}
       }
-      $('.crumbs span:nth-child(3)').textContent = currentAnime;
       setScope(scan.episode ? 'episode' : 'anime');
     }
-    if (globalThis.chrome?.storage?.local) {
-      async function loadCurrentScan() {
-        try { const { currentScan } = await chrome.storage.local.get('currentScan'); applyScan(currentScan); } catch {}
+    $('#manualScanForm').addEventListener('submit', (event) => {
+      event.preventDefault();
+      const title = $('#manualTitle').value.trim();
+      if (!/[\p{L}\p{N}]/u.test(title)) {
+        toast('Enter the title of what you’re watching.');
+        $('#manualTitle').focus();
+        return;
       }
-      loadCurrentScan();
-      chrome.storage.onChanged.addListener((changes, area) => {
-        if (area === 'local' && changes.currentScan) applyScan(changes.currentScan.newValue);
+      const seasonValue = $('#manualSeason').value;
+      const episodeValue = $('#manualEpisode').value;
+      applyScan({
+        title,
+        season: seasonValue ? 'Season ' + Number(seasonValue) : '',
+        episode: episodeValue ? 'Episode ' + String(Number(episodeValue)).padStart(2, '0') : '',
+        kind: episodeValue || !roomReady ? 'series' : mediaKind,
+        message: 'Discussion opened with the details you entered.'
       });
-    }
+    });
     if (!FandomRoomBackend.configured) try { if (localStorage.getItem(followKey()) === 'true') { $('#followButton').setAttribute('aria-pressed', 'true'); $('#followButton').classList.add('is-following'); $('#followButton').innerHTML = '✓&nbsp; Following'; } } catch {}
-    $('#shareButton').addEventListener('click', async () => {
-      try { await navigator.clipboard.writeText(location.href); toast('Discussion link copied.'); }
-      catch { toast('Share this page using your browser’s share menu.'); }
+    const rateGate = $('#rateGate');
+    const rateDialog = $('.rate-dialog', rateGate);
+    function closeRatingGate() {
+      rateGate.hidden = true;
+      ratingReturnFocus?.focus();
+    }
+    $('#rateButton').addEventListener('click', () => {
+      ratingReturnFocus = $('#rateButton');
+      rateGate.hidden = false;
+      rateDialog.focus();
     });
-    $('#search').addEventListener('input', e => {
-      const value = e.target.value.trim();
-      const results = $('#searchResults');
-      if (!value) { results.classList.remove('show'); render(); return; }
-      results.textContent = `${currentAnime} · ` + (scope === 'anime' ? 'Whole anime discussion' : `${currentEpisode} discussion`);
-      results.classList.add('show'); render();
-    });
-    $('#search').addEventListener('keydown', e => { if (e.key === 'Enter' && e.target.value.trim()) { $('#searchResults').classList.remove('show'); $('#search').blur(); toast('Showing matching discussion messages.'); } });
-    $('#profile').addEventListener('click', () => toast('Profile and account settings are coming soon.'));
-    setScope(location.hash === '#anime' ? 'anime' : 'episode');
+    $('#rateClose').addEventListener('click', closeRatingGate);
+    $('#rateDismiss').addEventListener('click', closeRatingGate);
+    rateGate.addEventListener('click', event => { if (event.target === rateGate) closeRatingGate(); });
+    document.addEventListener('keydown', event => { if (event.key === 'Escape' && !rateGate.hidden) closeRatingGate(); });
+    const refreshScanButton = $('#refreshScan');
+    let scanRequest = 0;
+    function clearRoom(title, message) {
+      roomReady = false;
+      ++roomRequest;
+      $('main').classList.add('no-room');
+      $('#manualScan').hidden = true;
+      $('#scanTitle').textContent = title;
+      $('#scanMessage').textContent = message;
+    }
+    function resetScanButton() {
+      refreshScanButton.disabled = false;
+      refreshScanButton.textContent = '↻ Refresh & scan';
+    }
+    async function scanActiveTab() {
+      const request = ++scanRequest;
+      clearRoom('Scanning this page', 'Looking for the title and episode.');
+      refreshScanButton.disabled = true;
+      refreshScanButton.textContent = 'Scanning page…';
+      try {
+        const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+        if (request !== scanRequest) return;
+        if (tab?.id == null) throw new Error('Open a viewing page and try again.');
+        const result = await chrome.runtime.sendMessage({ type: 'FANDOMROOM_REFRESH_SCAN', tabId: tab.id });
+        if (request !== scanRequest) return;
+        if (!result?.ok) throw new Error(result?.error || 'Could not scan this page.');
+        applyScan(result.scan);
+      } catch (error) {
+        if (request === scanRequest) applyScan({ supported: false, message: error.message || 'Could not scan this page.' });
+      } finally {
+        if (request === scanRequest) resetScanButton();
+      }
+    }
+    refreshScanButton.addEventListener('click', scanActiveTab);
+    if (extensionMode) {
+      const panelWindow = chrome.windows.getCurrent();
+      chrome.runtime.onMessage.addListener((message) => {
+        if (message?.type !== 'FANDOMROOM_TOOLBAR_SCAN') return;
+        panelWindow.then(({ id }) => {
+          if (message.windowId === id) scanActiveTab();
+        });
+      });
+      scanActiveTab();
+    } else {
+      refreshScanButton.hidden = true;
+      setScope(location.hash === '#anime' ? 'anime' : 'episode');
+    }
