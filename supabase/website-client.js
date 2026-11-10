@@ -73,6 +73,22 @@
     }
     storeSession(null);
   }
+  async function getMembership() {
+    const active = await getSession();
+    if (!active || active.user?.is_anonymous) return { active: false, status: 'inactive' };
+    const rows = await request(`user_subscriptions?${params({ select: 'status,current_period_end,cancel_at_period_end', limit: '1' })}`, {}, true);
+    const status = rows?.[0]?.status || 'inactive';
+    return { active: status === 'active' || status === 'trialing', status, currentPeriodEnd: rows?.[0]?.current_period_end || null, cancelAtPeriodEnd: Boolean(rows?.[0]?.cancel_at_period_end) };
+  }
+  async function billingAction(path, body = {}) {
+    const active = await getSession();
+    if (!active || active.user?.is_anonymous) throw new Error('Sign in with your Fandom Room account to continue.');
+    const response = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${active.access_token}` }, body: JSON.stringify(body) });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.error || 'Fandom Room could not open billing.');
+    if (!result.url) throw new Error('Stripe did not return a checkout link.');
+    location.assign(result.url);
+  }
   async function request(path, options = {}, needsAuth = false) {
     const active = needsAuth ? await getSession() : null;
     if (needsAuth && !active) throw new Error('Sign in to continue.');
@@ -157,5 +173,5 @@
       method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ thread_id: id, parent_id: parentId, author_id: active.user.id, body })
     }, true);
   }
-  globalThis.FandomRoomWeb = { configured: Boolean(baseUrl && apiKey), getSession, resumeLinkSession, signUp, signIn, signInWithGoogle, signOut, createThread, listThreads, loadThread, loadMyResponse, pollResults, rankingResults, vote, rank, loadComments, addComment };
+  globalThis.FandomRoomWeb = { configured: Boolean(baseUrl && apiKey), getSession, resumeLinkSession, signUp, signIn, signInWithGoogle, signOut, getMembership, startCheckout: plan => billingAction('/api/create-checkout-session', { plan }), openBillingPortal: () => billingAction('/api/create-portal-session'), createThread, listThreads, loadThread, loadMyResponse, pollResults, rankingResults, vote, rank, loadComments, addComment };
 })();

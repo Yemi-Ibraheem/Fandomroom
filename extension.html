@@ -197,6 +197,16 @@
     .rate-close { position: absolute; top: 10px; right: 11px; width: 32px; height: 32px; border: 0; border-radius: 7px; background: transparent; color: var(--muted); font-size: 21px; }
     .rate-close:hover { background: var(--surface-raised); color: var(--text); }
     .rate-dialog .rate-dismiss { display: block; width: 100%; min-height: 38px; margin-top: 18px; border: 0; border-radius: 8px; background: var(--lime); color: var(--lime-ink); font-size: 12px; font-weight: 700; }
+    .rate-account-label { margin: 16px 0 9px !important; color: var(--lime) !important; font-size: 10px !important; font-weight: 750; }
+    #rateSignInForm,#rateEditor { display: grid; gap: 8px; margin-top: 8px; }
+    #rateSignInForm label,#rateEditor>label { color: var(--muted); font-size: 10px; }
+    #rateSignInForm input { width: 100%; height: 38px; padding: 0 10px; border: 1px solid #454450; border-radius: 7px; background: #111119; color: var(--text); font-size: 12px; }
+    .rate-submit { min-height: 38px; margin-top: 3px; border: 0; border-radius: 8px; background: var(--lime); color: var(--lime-ink); font-size: 11px; font-weight: 750; }
+    .rate-join { display: block; margin-top: 11px; color: var(--lime); text-align: center; font-size: 10px; text-decoration: none; }
+    .rate-error { min-height: 0; color: #ffb7b7 !important; font-size: 10px !important; }
+    .rate-input-line { display: flex; align-items: center; gap: 12px; }
+    .rate-input-line input { width: 100%; accent-color: var(--lime); }
+    .rate-input-line output { min-width: 46px; color: var(--lime); font-size: 12px; font-weight: 750; }
     @media (max-width: 420px) {
       .page { padding-inline: 10px; }
       .site-header { margin-inline: -10px; padding-inline: 10px; }
@@ -300,8 +310,10 @@
     <section class="rate-dialog" role="dialog" aria-modal="true" aria-labelledby="rateTitle" aria-describedby="rateCopy" tabindex="-1">
       <button class="rate-close" id="rateClose" type="button" aria-label="Close">×</button>
       <h2 id="rateTitle">Ratings from real fans</h2>
-      <p id="rateCopy">To help prevent review bombing and keep episode ratings as true as possible, only Super Members can rate an episode. Subscribe to become a Super Member.</p>
-      <button class="rate-dismiss" id="rateDismiss" type="button">Got it</button>
+      <p id="rateCopy">Superfan members can save one rating for each episode, show, movie, or video.</p>
+      <div id="rateAccountGate"><p class="rate-account-label">Already a Fandom Room member?</p><form id="rateSignInForm"><label for="rateEmail">Email address</label><input id="rateEmail" type="email" autocomplete="email" required><label for="ratePassword">Password</label><input id="ratePassword" type="password" autocomplete="current-password" required><p class="rate-error" id="rateError" role="alert"></p><button class="rate-submit" id="rateSignInButton" type="submit">Sign in and check access</button></form><a class="rate-join" href="https://www.fandomroom.com/#superfan" target="_blank" rel="noopener">Join Superfan · £4.99 monthly or £39.99 yearly ↗</a></div>
+      <form id="rateEditor" hidden><label for="episodeScore">Your rating</label><div class="rate-input-line"><input id="episodeScore" type="range" min="1" max="10" step="1" value="8"><output id="episodeScoreValue" for="episodeScore">8 / 10</output></div><p class="rate-error" id="rateSaveStatus" role="status"></p><button class="rate-submit" type="submit">Save my rating</button></form>
+      <button class="rate-dismiss" id="rateDismiss" type="button">Close</button>
     </section>
   </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>

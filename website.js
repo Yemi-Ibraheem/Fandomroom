@@ -40,14 +40,46 @@
   function openBackdrop(id) { $(`#${id}`).classList.add('open'); }
   function closeBackdrop(id) { $(`#${id}`).classList.remove('open'); }
   function requireAuth(action) {
-    if (currentUser) return action();
+    if (currentUser && !currentUser.is_anonymous) return action();
     pendingAction = action;
     openAuth();
   }
-  function requirePremium(action) {
-    if (currentUser?.app_metadata?.plan === 'premium') return action();
-    if (!currentUser) { pendingAction = () => requirePremium(action); openAuth(); return; }
+  async function requirePremium(action) {
+    if (!currentUser || currentUser.is_anonymous) { pendingAction = () => requirePremium(action); openAuth(); return; }
+    try {
+      const membership = await api.getMembership();
+      if (membership.active) return action();
+      await showSuperfanOffer(membership);
+    } catch (error) { toast(niceError(error)); }
+  }
+  async function showSuperfanOffer(membership = null) {
+    if (!membership && currentUser && !currentUser.is_anonymous) {
+      try { membership = await api.getMembership(); } catch {}
+    }
+    const active = Boolean(membership?.active);
+    $('#premiumIntro').textContent = active
+      ? `Your Superfan membership is ${membership.cancelAtPeriodEnd ? 'set to end' : 'active'}${membership.currentPeriodEnd ? ` until ${new Date(membership.currentPeriodEnd).toLocaleDateString()}` : ''}. Manage billing securely through Stripe.`
+      : 'Superfan unlocks episode ratings, creating your own polls, and building anime rating lists.';
+    $$('.premium-choice').forEach(choice => { choice.hidden = active; });
+    $('#premiumManage').hidden = !active;
+    $('#premiumSignIn').hidden = Boolean(currentUser && !currentUser.is_anonymous);
     openBackdrop('premiumBackdrop');
+  }
+  async function beginCheckout(plan) {
+    if (!currentUser || currentUser.is_anonymous) { pendingAction = () => beginCheckout(plan); openAuth(); return; }
+    const button = $(`[data-plan="${plan}"]`);
+    const oldLabel = button.textContent;
+    button.disabled = true; button.textContent = 'Opening Stripe…';
+    try { await api.startCheckout(plan); }
+    catch (error) { toast(niceError(error)); }
+    finally { button.disabled = false; button.textContent = oldLabel; }
+  }
+  async function manageBilling() {
+    const button = $('#premiumManage');
+    button.disabled = true; button.textContent = 'Opening Stripe…';
+    try { await api.openBillingPortal(); }
+    catch (error) { toast(niceError(error)); }
+    finally { button.disabled = false; button.textContent = 'Manage membership'; }
   }
   function openAuth() {
     authMode = 'signin'; updateAuthMode(); openBackdrop('authBackdrop'); $('#authEmail').focus();
@@ -375,8 +407,12 @@
       try { api.signInWithGoogle(); } catch (error) { $('#authError').textContent = niceError(error); }
     });
     $('#authSwitch').addEventListener('click', () => { authMode = authMode === 'signin' ? 'signup' : 'signin'; updateAuthMode(); });
-    $('#createButton').addEventListener('click', () => requireAuth(openCreate));
-    $('#createForm').addEventListener('submit', event => { event.preventDefault(); requireAuth(() => submitCreate(event)); });
+    $('#superfanUpgrade').addEventListener('click', () => showSuperfanOffer());
+    $$('.premium-choice').forEach(button => button.addEventListener('click', () => beginCheckout(button.dataset.plan)));
+    $('#premiumManage').addEventListener('click', manageBilling);
+    $('#premiumSignIn').addEventListener('click', () => { closeBackdrop('premiumBackdrop'); openAuth(); });
+    $('#createButton').addEventListener('click', () => requirePremium(openCreate));
+    $('#createForm').addEventListener('submit', event => { event.preventDefault(); requirePremium(() => submitCreate(event)); });
     $('#createType').addEventListener('change', event => {
       const poll = event.target.value === 'poll';
       $('#pollSettings').hidden = !poll; $('#rankingSettings').hidden = poll; $('#choiceFields').innerHTML = '';
@@ -449,11 +485,6 @@
       input.select();
     })));
     $('#rateFeaturedRanking').addEventListener('click', () => requirePremium(() => toast('Your rating is saved in this preview only.')));
-    $('#premiumSignIn').addEventListener('click', () => {
-      closeBackdrop('premiumBackdrop');
-      if (!currentUser) openAuth();
-      else toast('Premium plan checkout is not connected yet.');
-    });
     updateControls();
   }
   document.addEventListener('DOMContentLoaded', () => { initTheme(); init(); });

@@ -93,7 +93,8 @@
       $('.rating-label').textContent = `${ratingSubject} rating`;
       $('.rating-summary').setAttribute('aria-label', `No ${ratingSubject} rating yet`);
       $('#rateButton').innerHTML = `<span aria-hidden="true">☆</span> Rate ${ratingSubject}`;
-      $('#rateCopy').textContent = `To help prevent review bombing and keep ${ratingSubject} ratings as true as possible, only Super Members can rate ${ratingSubject === 'episode' ? 'an' : 'a'} ${ratingSubject}. Subscribe to become a Super Member.`;
+      $('#rateCopy').textContent = `Superfan members can save one rating for each ${ratingSubject}.`;
+      refreshRatingSummary();
       $('#onlineCount').textContent = FandomRoomBackend.configured ? 'Shared community room' : whole ? '58 super fans here' : '25 super fans here';
       const commentPrompt = whole
         ? mediaKind === 'movie' ? 'What did you think about the movie?' : mediaKind === 'video' ? 'What did you think about the video?' : 'What did you think about the show?'
@@ -254,14 +255,74 @@
     if (!FandomRoomBackend.configured) try { if (localStorage.getItem(followKey()) === 'true') { $('#followButton').setAttribute('aria-pressed', 'true'); $('#followButton').classList.add('is-following'); $('#followButton').innerHTML = '✓&nbsp; Following'; } } catch {}
     const rateGate = $('#rateGate');
     const rateDialog = $('.rate-dialog', rateGate);
+    const ratingRoom = () => ({
+      animeSlug,
+      scope: scope === 'episode' ? 'episode' : mediaKind === 'movie' || mediaKind === 'video' ? mediaKind : 'show',
+      season: scope === 'episode' ? currentSeason : '',
+      episode: scope === 'episode' ? currentEpisode : ''
+    });
+    async function refreshRatingSummary() {
+      if (!FandomRoomBackend.configured) return;
+      try {
+        const summary = await FandomRoomBackend.ratingSummary(ratingRoom());
+        $('.rating-value').textContent = summary.average == null ? '—' : summary.average.toFixed(1);
+        $('.rating-count').textContent = summary.count ? `${summary.count} ${summary.count === 1 ? 'rating' : 'ratings'}` : 'No ratings yet';
+        $('.rating-summary').setAttribute('aria-label', summary.count ? `Average rating ${summary.average.toFixed(1)} out of 10 from ${summary.count} fans` : 'No ratings yet');
+      } catch {}
+    }
+    async function showRatingEditor() {
+      $('#rateAccountGate').hidden = true;
+      $('#rateEditor').hidden = false;
+      $('#rateSaveStatus').textContent = '';
+      try {
+        const saved = await FandomRoomBackend.myRating(ratingRoom());
+        if (saved) { $('#episodeScore').value = saved; $('#episodeScoreValue').textContent = `${saved} / 10`; }
+      } catch {}
+    }
+    async function openRatingGate() {
+      ratingReturnFocus = $('#rateButton');
+      rateGate.hidden = false;
+      rateDialog.focus();
+      $('#rateAccountGate').hidden = false;
+      $('#rateEditor').hidden = true;
+      $('#rateError').textContent = '';
+      $('#rateSaveStatus').textContent = '';
+      $('#rateCopy').textContent = 'Superfan members can save one rating for each episode, show, movie, or video.';
+      try {
+        const membership = await FandomRoomBackend.getMembership();
+        if (membership.active) await showRatingEditor();
+        else if (!FandomRoomBackend.configured) $('#rateError').textContent = 'Fandom Room sign-in is not configured.';
+      } catch (error) { $('#rateError').textContent = error.message; }
+    }
     function closeRatingGate() {
       rateGate.hidden = true;
       ratingReturnFocus?.focus();
     }
-    $('#rateButton').addEventListener('click', () => {
-      ratingReturnFocus = $('#rateButton');
-      rateGate.hidden = false;
-      rateDialog.focus();
+    $('#rateButton').addEventListener('click', openRatingGate);
+    $('#rateSignInForm').addEventListener('submit', async event => {
+      event.preventDefault();
+      $('#rateSignInButton').disabled = true;
+      $('#rateSignInButton').textContent = 'Checking account…';
+      $('#rateError').textContent = '';
+      try {
+        await FandomRoomBackend.signIn($('#rateEmail').value.trim(), $('#ratePassword').value);
+        const membership = await FandomRoomBackend.getMembership();
+        if (membership.active) await showRatingEditor();
+        else $('#rateError').textContent = 'Superfan is not active on this account yet. Join from the Fandom Room website, then sign in here.';
+      } catch (error) { $('#rateError').textContent = error.message; }
+      finally { $('#rateSignInButton').disabled = false; $('#rateSignInButton').textContent = 'Sign in and check access'; }
+    });
+    $('#episodeScore').addEventListener('input', event => { $('#episodeScoreValue').textContent = `${event.target.value} / 10`; });
+    $('#rateEditor').addEventListener('submit', async event => {
+      event.preventDefault();
+      const button = $('#rateEditor button[type="submit"]');
+      button.disabled = true; button.textContent = 'Saving…'; $('#rateSaveStatus').textContent = '';
+      try {
+        await FandomRoomBackend.rateMedia({ ...ratingRoom(), rating: Number($('#episodeScore').value) });
+        $('#rateSaveStatus').textContent = 'Your rating is saved.';
+        await refreshRatingSummary();
+      } catch (error) { $('#rateSaveStatus').textContent = error.message; }
+      finally { button.disabled = false; button.textContent = 'Save my rating'; }
     });
     $('#rateClose').addEventListener('click', closeRatingGate);
     $('#rateDismiss').addEventListener('click', closeRatingGate);
