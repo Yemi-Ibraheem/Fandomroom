@@ -473,12 +473,30 @@
       input.select();
     })));
     $('#rateFeaturedRanking').addEventListener('click', () => requirePremium(() => toast('Your rating is saved in this preview only.')));
-    $('#premiumSignIn').addEventListener('click', () => {
+    $('#premiumSignIn').addEventListener('click', async event => {
+      const button = event.currentTarget;
       closeBackdrop('premiumBackdrop');
-      if (!currentUser) openAuth();
-      else toast('Premium plan checkout is not connected yet.');
+      if (!currentUser) { pendingAction = () => startPremiumCheckout(button); openAuth(); return; }
+      await startPremiumCheckout(button);
     });
     updateControls();
+  }
+  async function startPremiumCheckout(button) {
+    button.disabled = true;
+    button.textContent = 'Opening secure checkout…';
+    try {
+      const session = await api.getSession();
+      if (!session?.access_token) throw new Error('Sign in before starting checkout.');
+      const response = await fetch('/api/create-checkout-session', { method: 'POST', headers: { Authorization: `Bearer ${session.access_token}` } });
+      const result = await response.json();
+      if (!response.ok || !result.url) throw new Error(result.error || 'Could not start checkout.');
+      location.assign(result.url);
+    } catch (error) {
+      toast(error.message || 'Could not start checkout. Please try again.');
+    } finally {
+      button.disabled = false;
+      button.textContent = 'Subscribe to Premium';
+    }
   }
   document.addEventListener('DOMContentLoaded', () => { initTheme(); init(); });
   document.addEventListener('DOMContentLoaded', () => { initLandingCarousel(); initFeaturedRanking(); });
