@@ -1,0 +1,41 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - link "Fandom Room home" [ref=e4] [cursor=pointer]:
+        - /url: "#"
+        - generic [ref=e5]: Fandom room
+    - main [ref=e6]:
+      - status [ref=e7]:
+        - generic [aria-hidden] [ref=e8]: ●
+        - generic [ref=e9]:
+          - strong [ref=e10]: Waiting for a page scan
+          - generic [ref=e11]: Open a viewing page, then click Fandom Room.
+      - region "Episode rating" [ref=e12]:
+        - generic "No episode rating yet" [ref=e13]:
+          - generic [ref=e14]: episode rating
+          - generic [aria-hidden] [ref=e15]: ★
+          - generic [ref=e16]:
+            - strong [ref=e17]: —
+            - text: / 10No ratings yet
+        - button "Rate episode" [ref=e18]:
+          - generic [aria-hidden] [ref=e19]: ☆
+          - text: Rate episode
+        - button "＋ Follow show" [ref=e20]:
+          - generic [ref=e21]: ＋
+          - text: Follow show
+      - navigation "Discussion scope" [ref=e22]:
+        - tab "Episode discussion" [selected] [ref=e23]
+        - tab "Whole show discussion" [ref=e24]
+      - generic [ref=e25]:
+        - generic [ref=e26]:
+          - strong [ref=e27]: 0 messages
+          - generic [ref=e28]: Shared community room
+        - combobox "Sort discussion" [ref=e29]:
+          - option "Newest first ⌄" [selected]
+          - option "Oldest first ⌄"
+      - generic [ref=e30]:
+        - generic [aria-hidden] [ref=e31]: "N"
+        - textbox "What did you think about the episode?" [ref=e32]
+      - region "Discussion messages" [ref=e33]:
+        - generic [ref=e34]: No messages here yet. Start the conversation.
+  - status

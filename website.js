@@ -14,6 +14,13 @@
   let pollResults = [];
   let ownThreads = false;
   let toastTimer;
+  const translationLanguages = {
+    fr: { flag: '🇫🇷', name: 'French' },
+    es: { flag: '🇪🇸', name: 'Spanish' },
+    pt: { flag: '🇧🇷', name: 'Portuguese' },
+    ja: { flag: '🇯🇵', name: 'Japanese' }
+  };
+  let translationLanguage = localStorage.getItem('fandomroom-translation-language') || 'fr';
 
   function escapeHtml(value = '') {
     return String(value).replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
@@ -37,6 +44,52 @@
   }
   function authorName(row) { return row?.author?.username || 'anime_fan'; }
   function initials(name) { return (name || 'F').slice(0, 1).toUpperCase(); }
+  function setTranslationLanguage(language) {
+    translationLanguage = translationLanguages[language] ? language : 'fr';
+    $('#translationLanguage').value = translationLanguage;
+    $('#languageFlag').textContent = translationLanguages[translationLanguage].flag;
+    localStorage.setItem('fandomroom-translation-language', translationLanguage);
+  }
+  async function translateComment(button) {
+    const comment = button.closest('[data-comment-body]');
+    const original = comment?.dataset.commentBody;
+    if (!original) return;
+    const translation = $('.comment-translation', comment);
+    if (translation && !translation.hidden && translation.dataset.language === translationLanguage) {
+      translation.hidden = true;
+      $('.comment-original', comment).hidden = false;
+      button.textContent = `Show translation · ${translationLanguages[translationLanguage].name}`;
+      return;
+    }
+    const language = translationLanguage;
+    const { name } = translationLanguages[language];
+    button.disabled = true;
+    button.textContent = 'Translating…';
+    try {
+      const query = new URLSearchParams({ client: 'gtx', sl: 'auto', tl: language, dt: 't', q: original });
+      const response = await fetch(`https://translate.googleapis.com/translate_a/single?${query}`);
+      if (!response.ok) throw new Error('Translation unavailable');
+      const result = await response.json();
+      const translated = (result[0] || []).map(part => part[0] || '').join('');
+      if (!translated) throw new Error('No translation returned');
+      let output = $('.comment-translation', comment);
+      if (!output) {
+        output = document.createElement('span');
+        output.className = 'comment-translation';
+        button.before(output);
+      }
+      output.dataset.language = language;
+      output.dataset.languageName = name;
+      output.textContent = translated;
+      output.hidden = false;
+      $('.comment-original', comment).hidden = true;
+      button.textContent = 'Show original';
+    } catch {
+      button.textContent = 'Translation unavailable · try again';
+    } finally {
+      button.disabled = false;
+    }
+  }
   function openBackdrop(id) { $(`#${id}`).classList.add('open'); }
   function closeBackdrop(id) { $(`#${id}`).classList.remove('open'); }
   function requireAuth(action) {
@@ -213,16 +266,21 @@
       $$('[data-rank-select]', $('#rankingChoices')).forEach(input => input.addEventListener('change', () => toggleTopThree(input.dataset.rankSelect, input.checked, thread)));
     }
     $('#commentForm').addEventListener('submit', event => { event.preventDefault(); const input = $('input', event.currentTarget); const body = input.value.trim(); if (!body) return; requireAuth(async () => { try { await api.addComment(thread.id, body); await renderThread(thread); toast('Your reply is posted.'); } catch (error) { toast(niceError(error)); } }); });
+    $('#commentList').addEventListener('click', event => {
+      const button = event.target.closest('[data-translate]');
+      if (button) translateComment(button);
+    });
     $$('[data-reply]', $('#commentList')).forEach(button => button.addEventListener('click', () => showReplyForm(button.dataset.reply, button.closest('.comment'))));
   }
   function renderComments(rows) {
     if (!rows.length) return '<div class="empty">No replies yet. Start the conversation.</div>';
     const byParent = new Map();
     for (const row of rows) { const key = row.parent_id || 'root'; if (!byParent.has(key)) byParent.set(key, []); byParent.get(key).push(row); }
-    return (byParent.get('root') || []).map(row => {
-      const name = authorName(row); const replies = byParent.get(row.id) || [];
-      return `<div class="comment"><div class="avatar">${escapeHtml(initials(name))}</div><div class="comment-body"><strong>${escapeHtml(name)}</strong><time>${escapeHtml(timeAgo(row.created_at))}</time><br>${escapeHtml(row.body)}<button type="button" class="reply-button" data-reply="${row.id}">Reply</button>${replies.map(reply => `<div class="comment"><div class="avatar">${escapeHtml(initials(authorName(reply)))}</div><div class="comment-body"><strong>${escapeHtml(authorName(reply))}</strong><time>${escapeHtml(timeAgo(reply.created_at))}</time><br>${escapeHtml(reply.body)}</div></div>`).join('')}</div></div>`;
-    }).join('');
+    const renderComment = (row, isReply = false) => {
+      const name = authorName(row);
+      return `<div class="comment ${isReply ? 'comment-reply' : ''}"><div class="avatar">${escapeHtml(initials(name))}</div><div class="comment-body" data-comment-body="${escapeHtml(row.body)}"><strong>${escapeHtml(name)}</strong><time>${escapeHtml(timeAgo(row.created_at))}</time><br><span class="comment-original">${escapeHtml(row.body)}</span><span class="comment-translation" hidden></span><button type="button" class="reply-button translate-button" data-translate>Show translation · ${translationLanguages[translationLanguage].name}</button>${isReply ? '' : `<button type="button" class="reply-button" data-reply="${escapeHtml(row.id)}">Reply</button>`}${(byParent.get(row.id) || []).map(reply => renderComment(reply, true)).join('')}</div></div>`;
+    };
+    return (byParent.get('root') || []).map(row => renderComment(row)).join('');
   }
   function showReplyForm(parentId, container) {
     if ($('.reply-box', container)) return;
@@ -315,12 +373,20 @@
     $('#addChoice').classList.toggle('is-empty-ranking', ranking && rows.length === 0);
     $('#rankingEmptyHint').hidden = !ranking || rows.length > 0;
   }
+  function setCreateMode(type) {
+    const ranking = type === 'ranking';
+    $('#createBackdrop').classList.toggle('ranking-workspace-open', ranking);
+    $('#createForm').classList.toggle('ranking-workspace-form', ranking);
+    $('#createHeading').textContent = ranking ? 'Build your ranking' : 'Start a thread';
+    $('#pollSettings').hidden = ranking; $('#rankingSettings').hidden = !ranking;
+    $('#choiceFieldLabel').firstChild.textContent = ranking ? 'Ranking chart ' : 'Choices and images ';
+    refreshChoiceRows();
+  }
   function openCreate() {
     $('#createError').textContent = ''; $('#createForm').reset(); $('#choiceFields').innerHTML = '';
     $('#createType').value = filter === 'ranking' ? 'ranking' : 'poll';
     if ($('#createType').value === 'poll') { addChoiceRow(); addChoiceRow(); }
-    $('#pollSettings').hidden = $('#createType').value === 'ranking'; $('#rankingSettings').hidden = $('#createType').value !== 'ranking';
-    refreshChoiceRows(); openBackdrop('createBackdrop'); $('#threadTitleInput').focus();
+    setCreateMode($('#createType').value); openBackdrop('createBackdrop'); $('#threadTitleInput').focus();
   }
   async function submitCreate(event) {
     event.preventDefault(); $('#createError').textContent = '';
@@ -403,9 +469,9 @@
     $('#createForm').addEventListener('submit', event => { event.preventDefault(); requireAuth(() => submitCreate(event)); });
     $('#createType').addEventListener('change', event => {
       const poll = event.target.value === 'poll';
-      $('#pollSettings').hidden = !poll; $('#rankingSettings').hidden = poll; $('#choiceFields').innerHTML = '';
+      $('#choiceFields').innerHTML = '';
       if (poll) { addChoiceRow(); addChoiceRow(); }
-      refreshChoiceRows();
+      setCreateMode(event.target.value);
     });
     $('#addChoice').addEventListener('click', () => {
       if ($('#createType').value === 'ranking') { $('#rankingImageInput').click(); return; }
@@ -498,7 +564,11 @@
       button.textContent = 'Subscribe to Premium';
     }
   }
-  document.addEventListener('DOMContentLoaded', () => { initTheme(); init(); });
+  document.addEventListener('DOMContentLoaded', () => {
+    setTranslationLanguage(translationLanguage);
+    $('#translationLanguage').addEventListener('change', event => setTranslationLanguage(event.target.value));
+    initTheme(); init();
+  });
   document.addEventListener('DOMContentLoaded', () => { initLandingCarousel(); initFeaturedRanking(); });
 })();
 

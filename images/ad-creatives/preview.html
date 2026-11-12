@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fandom Room · Super Leader ad concepts</title>
+  <style>
+    :root { --bg: #0f1016; --lime: #d4ff54; --ink: #07191d; --text: #f5f4f7; --muted: #aaa9b9; font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 20px; background: #08090e; color: var(--text); }
+    .gallery { display: grid; gap: 28px; justify-content: start; }
+    .concept { width: 360px; min-height: 190px; overflow: hidden; border: 1px solid #41463a; border-radius: 12px; background: #1b1e1b; }
+    .eyebrow { font-size: 9px; font-weight: 800; letter-spacing: .11em; text-transform: uppercase; }
+    h2 { margin: 0; font-size: 20px; line-height: 1.15; letter-spacing: -.045em; }
+    p { margin: 0; font-size: 11px; line-height: 1.5; }
+    .cta { display: inline-flex; justify-content: center; align-items: center; min-height: 32px; padding: 0 11px; border-radius: 6px; background: var(--lime); color: var(--ink); font-size: 10px; font-weight: 800; text-decoration: none; white-space: nowrap; }
+    .verdict { display: flex; flex-direction: column; min-height: 166px; padding: 17px 16px 15px; background: linear-gradient(115deg, #20241e, #191b22 70%); }
+    .verdict .top { display: flex; justify-content: space-between; align-items: center; color: var(--lime); }
+    .verdict .top .spark { font-size: 27px; line-height: 1; }
+    .verdict h2 { margin-top: 12px; }
+    .verdict .features { margin-top: 6px; color: #e0e4d3; font-size: 12px; }
+    .verdict .bottom { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: auto; }
+    .verdict .bottom p { max-width: 215px; color: var(--muted); font-size: 10px; }
+    .debate { position: relative; display: flex; flex-direction: column; padding: 17px 16px 15px; border-color: #524b67; background: radial-gradient(circle at 100% 0%, #343049, #1b1b26 58%); }
+    .debate .eyebrow { color: #c8b6ff; }
+    .debate .body { display: grid; grid-template-columns: minmax(0, 1fr) 92px; align-items: center; gap: 8px; margin-top: 13px; }
+    .debate h2 { max-width: 210px; }
+    .debate .choice { display: grid; gap: 8px; }
+    .debate .choice span { display: block; height: 24px; padding: 7px; border: 1px solid #655b82; border-radius: 4px; background: #373149; }
+    .debate .choice span::after { content: ''; display: block; width: 72%; height: 8px; border-radius: 2px; background: #a592d3; }
+    .debate .choice span:last-child::after { width: 49%; background: #696177; }
+    .debate .copy { margin-top: 9px; color: #d9d2e9; }
+    .debate .bottom { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: auto; }
+    .debate .bottom p { max-width: 165px; color: #bcb6ca; }
+    .ranking { display: grid; grid-template-columns: minmax(0, 1fr) 94px; gap: 8px; padding: 17px 16px 15px; border-color: #4d493c; background: linear-gradient(125deg, #24231d, #17191f 78%); }
+    .ranking .eyebrow { color: #eecb86; }
+    .ranking h2 { margin-top: 13px; }
+    .ranking .copy { margin-top: 8px; color: #d9d4c8; }
+    .ranking .cta { margin-top: 17px; }
+    .ranking .list { align-self: center; display: grid; gap: 8px; transform: rotate(5deg); }
+    .ranking .list div { display: flex; align-items: center; gap: 7px; height: 31px; padding: 0 7px; border: 1px solid #5f5846; border-radius: 4px; background: #333126; color: #c7bea7; font-size: 10px; font-weight: 800; }
+    .ranking .list div:first-child { border-color: var(--lime); color: var(--lime); }
+    .ranking .list div::after { content: ''; display: block; width: 38px; height: 7px; border-radius: 2px; background: currentColor; opacity: .45; }
+  </style>
+</head>
+<body>
+  <main class="gallery">
+    <section class="concept verdict" id="creative-verdict" aria-label="Creative one: Make every anime count">
+      <div class="top"><span class="eyebrow">Fandom Room · Go further</span><span class="spark" aria-hidden="true">✦</span></div>
+      <h2>Make every anime count.</h2>
+      <p class="features">Review every anime. Create polls and rankings.</p>
+      <div class="bottom"><p>Lead the conversation as a Super Leader.</p><span class="cta">Start creating ↗</span></div>
+    </section>
+    <section class="concept debate" id="creative-debate" aria-label="Creative two: Start a debate">
+      <span class="eyebrow">Super Leader · The debate</span>
+      <div class="body"><h2>Settle the next anime debate.</h2><div class="choice" aria-hidden="true"><span></span><span></span></div></div>
+      <p class="copy">Review the show. Ask the fandom. Rank the answers.</p>
+      <div class="bottom"><p>Your take starts the room.</p><span class="cta">Start a poll ↗</span></div>
+    </section>
+    <section class="concept ranking" id="creative-ranking" aria-label="Creative three: Show your taste">
+      <div><span class="eyebrow">Super Leader · Your list</span><h2>Your anime taste, ranked.</h2><p class="copy">Review every anime. Build rankings fans can challenge.</p><span class="cta">Build a ranking ↗</span></div>
+      <div class="list" aria-hidden="true"><div>01</div><div>02</div><div>03</div></div>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fandom Room · image-led ad concepts</title>
+  <style>
+    :root { font-family: Inter, ui-sans-serif, system-ui, sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 20px; background: #090a0e; }
+    main { display: grid; gap: 26px; justify-content: start; }
+    .ad { position: relative; isolation: isolate; width: 360px; height: 216px; overflow: hidden; border-radius: 11px; }
+    .ad h2 { margin: 0; letter-spacing: -.055em; line-height: 1.03; }
+    .ad p { margin: 0; }
+    .ad .tag { font-size: 9px; font-weight: 800; letter-spacing: .12em; text-transform: uppercase; }
+    .ad .cta { display: inline-flex; min-height: 33px; align-items: center; justify-content: center; padding: 0 11px; border-radius: 5px; font-size: 10px; font-weight: 800; white-space: nowrap; }
+    .cinematic { border: 1px solid #a45522; background: #512307; color: #ffe1b5; }
+    .cinematic .art { position: absolute; z-index: -2; inset: 0 0 0 36%; background: url('../anime.jpg') center 47% / cover no-repeat; }
+    .cinematic::before { content: ''; position: absolute; z-index: -1; inset: 0; background: linear-gradient(90deg,#512307 0%,#512307 30%,#512307f2 43%,#5123079c 72%,#51230718 100%); }
+    .cinematic .copy { display: flex; flex-direction: column; align-items: flex-start; height: 100%; padding: 16px; }
+    .cinematic .tag { color: #ffbf78; }
+    .cinematic h2 { max-width: 240px; margin-top: 2px; font-size: 23px; }
+    .cinematic ul { display: grid; gap: 6px; max-width: 230px; margin: 10px 0 0; padding: 0; list-style: none; }
+    .cinematic li { display: flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 750; }
+    .cinematic li::before { content: '✓'; display: grid; flex: none; place-items: center; width: 16px; height: 16px; border-radius: 50%; background: #ffd098; color: #512307; font-size: 9px; }
+    .cinematic .cta { display: flex; justify-content: center; gap: 10px; width: 100%; min-height: 42px; margin-top: auto; padding: 0 15px; border: 1px solid #d4ff8e; border-radius: 7px; background: #b9f45c; color: #18300a; font-size: 14px; }
+    .cinematic .cta span { font-size: 24px; font-weight: 500; line-height: 1; }
+    .pop { border: 1px solid #d498e3; background: #ddb1f3; color: #171019; }
+    .pop::before { content: ''; position: absolute; z-index: -1; right: -38px; top: -42px; width: 225px; height: 225px; border-radius: 50%; background: #f7d2ff; }
+    .pop .art { position: absolute; right: -17px; top: 23px; width: 165px; height: 165px; border: 5px solid #fce6ff; border-radius: 50%; background: url('../best-anime-series-of-all-time-featuring-goku.avif') 48% center / cover no-repeat; box-shadow: 0 12px 30px #4b16534a; }
+    .pop .copy { display: flex; flex-direction: column; align-items: flex-start; height: 100%; padding: 16px; }
+    .pop .tag { color: #5e2566; }
+    .pop h2 { max-width: 208px; margin-top: 22px; font-size: 26px; font-weight: 850; text-transform: uppercase; }
+    .pop p { max-width: 185px; margin-top: 8px; font-size: 11px; line-height: 1.35; font-weight: 550; }
+    .pop .cta { margin-top: auto; background: #171019; color: #fff; }
+    .poster { border: 1px solid #3a3448; background: #0b0a0f; color: #fff; }
+    .poster::before { content: ''; position: absolute; z-index: -3; inset: 0; background-image: linear-gradient(#ffffff0d 1px,transparent 1px),linear-gradient(90deg,#ffffff0d 1px,transparent 1px); background-size: 40px 40px; }
+    .poster .orb { position: absolute; z-index: -2; right: -24px; top: 31px; width: 190px; height: 190px; border-radius: 50%; background: linear-gradient(125deg,#7645e8,#ff479a); }
+    .poster .art { position: absolute; z-index: -1; right: -9px; top: 3px; width: 175px; height: 220px; background: url('../best-anime-series-of-all-time-featuring-goku.avif') 46% center / cover no-repeat; mask-image: linear-gradient(90deg,transparent,#000 22%); }
+    .poster .copy { display: flex; flex-direction: column; align-items: flex-start; height: 100%; padding: 16px; background: linear-gradient(90deg,#0b0a0f 0%,#0b0a0fe6 32%,transparent 72%); }
+    .poster .tag { color: #e77bc9; }
+    .poster h2 { max-width: 220px; margin-top: 14px; font-size: 24px; font-weight: 500; }
+    .poster h2 em { color: #f178c6; font-family: Georgia, serif; font-weight: 400; }
+    .poster p { max-width: 195px; margin-top: 7px; color: #e0dce6; font-size: 11px; line-height: 1.38; }
+    .poster .cta { margin-top: auto; background: #d4ff54; color: #101411; }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="ad cinematic" id="creative-cinematic"><div class="art" aria-hidden="true"></div><div class="copy"><h2>Become a Super Fan 👑 and:</h2><ul><li>Review all anime</li><li>Create your own polls</li><li>Create your own rankings</li></ul><span class="cta">Start creating <span aria-hidden="true">→</span></span></div></section>
+    <section class="ad pop" id="creative-pop"><div class="art" aria-hidden="true"></div><div class="copy"><span class="tag">Fandom Room · Super Leader</span><h2>Your take. Their vote.</h2><p>Review anime. Create polls. Rank the favourites.</p><span class="cta">Start a poll ↗</span></div></section>
+    <section class="ad poster" id="creative-poster"><div class="orb" aria-hidden="true"></div><div class="art" aria-hidden="true"></div><div class="copy"><span class="tag">Fandom Room · Super Leader</span><h2>Watch it.<br>Rate it.<br><em>Rank it.</em></h2><p>Review anime. Create polls. Rank the best.</p><span class="cta">Build a ranking ↗</span></div></section>
+  </main>
+</body>
+</html>

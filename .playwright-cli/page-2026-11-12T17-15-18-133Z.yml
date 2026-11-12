@@ -1,0 +1,49 @@
+- generic [active] [ref=f1e1]:
+  - generic [ref=f1e2]:
+    - banner [ref=f1e3]:
+      - link "Fandom Room home" [ref=f1e4] [cursor=pointer]:
+        - /url: "#"
+        - generic [ref=f1e5]: Fandom room
+    - main [ref=f1e6]:
+      - status [ref=f1e7]:
+        - generic [aria-hidden] [ref=f1e8]: ●
+        - generic [ref=f1e9]:
+          - strong [ref=f1e10]: Waiting for a page scan
+          - generic [ref=f1e11]: Open a viewing page, then click Fandom Room.
+      - region "Episode rating" [ref=f1e12]:
+        - generic "No episode rating yet" [ref=f1e13]:
+          - generic [ref=f1e14]: episode rating
+          - generic [aria-hidden] [ref=f1e15]: ★
+          - generic [ref=f1e16]:
+            - strong [ref=f1e17]: —
+            - text: / 10No ratings yet
+        - button "Rate episode" [ref=f1e18]:
+          - generic [aria-hidden] [ref=f1e19]: ☆
+          - text: Rate episode
+        - button "＋ Follow show" [ref=f1e20]:
+          - generic [ref=f1e21]: ＋
+          - text: Follow show
+      - navigation "Discussion scope" [ref=f1e22]:
+        - tab "Episode discussion" [selected] [ref=f1e23]
+        - tab "Whole show discussion" [ref=f1e24]
+      - generic [ref=f1e25]:
+        - generic [ref=f1e26]:
+          - strong [ref=f1e27]: 0 messages
+          - generic [ref=f1e28]: Shared community room
+        - combobox "Sort discussion" [ref=f1e29]:
+          - option "Newest first ⌄" [selected]
+          - option "Oldest first ⌄"
+      - generic [ref=f1e30]:
+        - generic [aria-hidden] [ref=f1e31]: "N"
+        - textbox "What did you think about the episode?" [ref=f1e32]
+      - region "Discussion messages" [ref=f1e33]:
+        - generic [ref=f1e34]: No messages here yet. Start the conversation.
+      - complementary "Become a Super Fan 👑 and:" [ref=f1e35]:
+        - heading "Become a Super Fan 👑 and:" [level=2] [ref=f1e36]
+        - list [ref=f1e37]:
+          - listitem [ref=f1e38]: ✓ Review all anime
+          - listitem [ref=f1e39]: ✓ Create your own polls
+          - listitem [ref=f1e40]: ✓ Create your own rankings
+        - link "Start creating 👑" [ref=f1e42] [cursor=pointer]:
+          - /url: https://www.fandomroom.com/#community
+  - status

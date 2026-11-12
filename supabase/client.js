@@ -46,8 +46,55 @@
     return result;
   }
   const filters = values => new URLSearchParams(values).toString();
+  async function signIn(email, password) {
+    if (!configured) throw new Error('Fandom Room sign-in is not configured.');
+    const response = await fetch(`${baseUrl}/auth/v1/token?grant_type=password`, {
+      method: 'POST', headers: { apikey: apiKey, 'Content-Type': 'application/json' }, body: JSON.stringify({ email, password })
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.msg || result.message || 'Could not sign in to Fandom Room.');
+    return storeSession(result);
+  }
+  async function getMembership() {
+    if (!session) {
+      try { session = JSON.parse(localStorage.getItem(sessionKey) || 'null'); } catch { session = null; }
+    }
+    if (!session?.access_token) return { active: false, status: 'inactive' };
+    const active = await getSession();
+    if (active.user?.is_anonymous) return { active: false, status: 'inactive' };
+    const response = await fetch(`${baseUrl}/auth/v1/user`, {
+      headers: { apikey: apiKey, Authorization: `Bearer ${active.access_token}` }
+    });
+    if (!response.ok) throw new Error('Could not check your Premium membership. Please sign in again.');
+    const user = await response.json();
+    const isPremium = user.app_metadata?.plan === 'premium';
+    if (isPremium && active.user?.app_metadata?.plan !== 'premium' && active.refresh_token) {
+      const renewed = await fetch(`${baseUrl}/auth/v1/token?grant_type=refresh_token`, {
+        method: 'POST', headers: { apikey: apiKey, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: active.refresh_token })
+      });
+      if (renewed.ok) storeSession(await renewed.json());
+    }
+    return { active: isPremium, status: isPremium ? 'premium' : 'inactive' };
+  }
+  async function ratingSummary({ animeSlug, scope, season = '', episode = '' }) {
+    const rows = await request(`media_ratings?${filters({ select: 'rating', anime_slug: `eq.${animeSlug}`, scope: `eq.${scope}`, season: `eq.${season}`, episode: `eq.${episode}` })}`);
+    const count = rows.length;
+    return { count, average: count ? rows.reduce((total, row) => total + Number(row.rating), 0) / count : null };
+  }
+  async function myRating({ animeSlug, scope, season = '', episode = '' }) {
+    const active = await getSession();
+    if (active.user?.is_anonymous) return null;
+    return request('rpc/get_my_fandomroom_rating', { method: 'POST', body: JSON.stringify({ p_anime_slug: animeSlug, p_scope: scope, p_season: season, p_episode: episode }) }, true);
+  }
+  async function rateMedia({ animeSlug, scope, season = '', episode = '', rating }) {
+    const active = await getSession();
+    if (active.user?.is_anonymous) throw new Error('Sign in to your Fandom Room account to rate.');
+    const membership = await getMembership();
+    if (!membership.active) throw new Error('A Premium membership is required to rate.');
+    return request('rpc/rate_fandomroom_media', { method: 'POST', body: JSON.stringify({ p_anime_slug: animeSlug, p_scope: scope, p_season: season, p_episode: episode, p_rating: rating }) }, true);
+  }
   async function loadPosts({ animeSlug, scope, season, episode }) {
-    await getSession();
     const where = { select: 'id,anime_slug,scope,season,episode,parent_id,author_id,body,spoiler,created_at,author:profiles!posts_author_id_fkey(username),likes:post_likes(user_id)', anime_slug: `eq.${animeSlug}`, scope: `eq.${scope}`, parent_id: 'is.null', order: 'created_at.desc' };
     if (scope === 'episode') { where.season = `eq.${season || ''}`; where.episode = `eq.${episode || ''}`; }
     const posts = await request(`posts?${filters(where)}`);
@@ -74,6 +121,10 @@
     else await request('post_likes', { method: 'POST', body: JSON.stringify({ post_id: postId, user_id: active.user.id }) }, true);
   }
   async function isFollowing(animeSlug) {
+    if (!session) {
+      try { session = JSON.parse(localStorage.getItem(sessionKey) || 'null'); } catch { session = null; }
+    }
+    if (!session?.access_token) return false;
     const active = await getSession();
     const rows = await request(`follows?${filters({ select: 'anime_slug', user_id: `eq.${active.user.id}`, anime_slug: `eq.${animeSlug}`, limit: '1' })}`, {}, true);
     return rows.length > 0;
@@ -84,5 +135,5 @@
     if (follow) await request('follows', { method: 'POST', body: JSON.stringify({ user_id: active.user.id, anime_slug: animeSlug }) }, true);
     else await request(`follows?${where}`, { method: 'DELETE' }, true);
   }
-  globalThis.FandomRoomBackend = { configured, createPost, isFollowing, loadPosts, setFollowing, toggleLike };
+  globalThis.FandomRoomBackend = { configured, createPost, isFollowing, loadPosts, setFollowing, toggleLike, signIn, getMembership, ratingSummary, myRating, rateMedia };
 })();

@@ -6,7 +6,7 @@ module.exports = async (req, res) => {
   if (req.method !== 'POST') { res.statusCode = 405; res.setHeader('Allow', 'POST'); res.end('Method not allowed.'); return; }
 
   const secretKey = process.env.STRIPE_SECRET_KEY;
-  const priceId = process.env.STRIPE_PREMIUM_PRICE_ID;
+  const priceId = process.env.STRIPE_PREMIUM_PRICE_ID || process.env.STRIPE_PRICE_MONTHLY;
   if (!secretKey) { res.statusCode = 503; res.end('Stripe Checkout is not configured.'); return; }
   if (!priceId) { res.statusCode = 503; res.end('Premium pricing is not configured.'); return; }
   if (!supabaseUrl || !publishableKey) { res.statusCode = 503; res.end('Fandom Room authentication is not configured.'); return; }

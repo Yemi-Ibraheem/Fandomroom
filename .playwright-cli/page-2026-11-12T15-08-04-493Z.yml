@@ -1,0 +1,64 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - link "Fandom Room home" [ref=e4] [cursor=pointer]:
+        - /url: "#"
+        - generic [ref=e5]: Fandom room
+    - main [ref=e6]:
+      - status [ref=e7]:
+        - generic [aria-hidden] [ref=e8]: ●
+        - generic [ref=e9]:
+          - strong [ref=e10]: Waiting for a page scan
+          - generic [ref=e11]: Open a viewing page, then click Fandom Room.
+      - region "Show rating" [ref=e35]:
+        - generic "No show rating yet" [ref=e36]:
+          - generic [ref=e14]: show rating
+          - generic [aria-hidden] [ref=e15]: ★
+          - generic [ref=e16]:
+            - strong [ref=e17]: —
+            - text: / 10No ratings yet
+        - button "Rate show" [ref=e37]:
+          - generic [aria-hidden] [ref=e38]: ☆
+          - text: Rate show
+        - button "＋ Follow show" [ref=e20]:
+          - generic [ref=e21]: ＋
+          - text: Follow show
+      - navigation "Discussion scope" [ref=e22]:
+        - tab "Episode discussion" [ref=e23]
+        - tab "Whole show discussion" [selected] [ref=e24]
+      - generic [ref=e25]:
+        - generic [ref=e26]:
+          - strong [ref=e27]: 0 posts
+          - generic [ref=e28]: Shared community room
+        - combobox "Sort discussion" [ref=e29]:
+          - option "Newest first ⌄" [selected]
+          - option "Oldest first ⌄"
+      - generic [ref=e30]:
+        - generic [aria-hidden] [ref=e31]: "N"
+        - textbox "What did you think about the show?" [ref=e39]
+      - region "Discussion messages" [ref=e33]:
+        - generic [ref=e40]: No messages here yet. Start the conversation.
+  - dialog "Ratings from real fans" [active] [ref=e42]:
+    - button "Close" [ref=e43]: ×
+    - heading "Ratings from real fans" [level=2] [ref=e44]
+    - paragraph [ref=e45]: To keep ratings true to the community and prevent review bombing, only Premium members can rate. Subscribe to become a Premium member.
+    - generic [ref=e46]:
+      - paragraph [ref=e47]: Already a Fandom Room member?
+      - generic [ref=e48]:
+        - generic [ref=e49]: Email address
+        - textbox "Email address" [ref=e50]
+        - generic [ref=e51]: Password
+        - textbox "Password" [ref=e52]
+        - alert [ref=e53]: Anonymous sign-ins are disabled
+        - button "Sign in and check access" [ref=e54]
+      - link "Explore Fandom Room Premium ↗" [ref=e55] [cursor=pointer]:
+        - /url: https://www.fandomroom.com/
+    - generic [ref=e56]:
+      - generic [ref=e57]: Your rating
+      - generic [ref=e58]:
+        - slider "Your rating" [ref=e59]: "8"
+        - status [ref=e60]: 8 / 10
+      - status
+      - button "Save my rating" [ref=e61]
+    - button "Close" [ref=e62]
+  - status: Anonymous sign-ins are disabled

@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0f1016">
+  <title>Fandom Room — Jujutsu Kaisen discussion</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0f1016;
+      --surface: #1b1b24;
+      --surface-raised: #22222d;
+      --surface-chip: #2a2938;
+      --line: #32323d;
+      --text: #f5f4f7;
+      --muted: #aaa9b9;
+      --dim: #777788;
+      --lime: #D4FF54;
+      --lime-ink: #07191d;
+      --purple: #aaa1c9;
+      --danger: #ff9b9b;
+      --radius: 16px;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: var(--bg); color: var(--text); }
+    button, input, textarea { font: inherit; }
+    button { color: inherit; }
+    .page { width: min(100%, 780px); min-height: 100vh; margin: 0 auto; padding: 0 16px 18px; }
+    .site-header { height: 77px; display: flex; align-items: center; justify-content: space-between; margin: 0 -16px; padding: 0 16px; border-bottom: 1px solid #44434d; }
+    .brand { font-size: 22px; font-weight: 750; letter-spacing: -.8px; text-decoration: none; color: var(--text); }
+    .brand img { display: block; width: 120px; height: auto; }
+    .profile { border: 0; width: 48px; height: 48px; display: grid; place-items: center; border-radius: 50%; color: #fff; font-size: 21px; background: linear-gradient(145deg, #c86bff 5%, #fa7abd 54%, #ffbd4c); }
+    .crumb-search { min-height: 61px; margin: 0 -16px; padding: 8px 16px; display: flex; align-items: center; justify-content: space-between; gap: 14px; border-bottom: 1px solid #44434d; }
+    .crumbs { display: flex; align-items: center; gap: 9px; white-space: nowrap; min-width: 0; color: #dedde4; font-size: 12px; }
+    .crumbs span { color: var(--dim); }
+    .crumbs b { overflow: hidden; text-overflow: ellipsis; font-weight: 650; }
+    .search-wrap { position: relative; width: min(276px, 50%); flex: 0 1 276px; }
+    .search { width: 100%; height: 46px; padding: 0 13px; color: var(--text); background: #22212c; border: 1px solid #302f3a; border-radius: 9px; outline: none; }
+    .search::placeholder { color: #777684; }
+    .search:focus { border-color: #87839d; }
+    .search-results { position: absolute; top: calc(100% + 6px); left: 0; right: 0; display: none; z-index: 4; padding: 10px 12px; background: #24232e; border: 1px solid #3b3a46; border-radius: 9px; color: #d8d6df; font-size: 12px; box-shadow: 0 10px 24px #0007; }
+    .search-results.show { display: block; }
+    .intro { padding-top: 18px; }
+    .eyebrow { display: flex; gap: 8px; align-items: center; color: var(--lime); text-transform: uppercase; font-size: 11px; font-weight: 700; letter-spacing: .35px; }
+    .eyebrow::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: var(--lime); }
+    h1 { margin: 12px 0 2px; font-size: clamp(23px, 5.7vw, 32px); line-height: 1.18; letter-spacing: -.7px; font-weight: 740; }
+    .subheading { margin: 5px 0 16px; font-size: 16px; color: #e0dfe5; letter-spacing: .04px; }
+    .head-actions { display: flex; gap: 8px; align-items: center; }
+    .outline-button, .follow-button { min-height: 54px; padding: 0 18px; border: 1px solid #e1e0e6; border-radius: 9px; background: transparent; font-size: 14px; font-weight: 650; transition: transform .15s, background .15s; }
+    .outline-button:hover { background: #22232b; }
+    .follow-button { display: inline-flex; gap: 9px; align-items: center; border-color: var(--lime); background: var(--lime); color: var(--lime-ink); }
+    .follow-button.is-following { background: transparent; color: var(--lime); }
+    .head-actions button:active { transform: scale(.97); }
+    .tabs { display: flex; align-items: stretch; gap: 0; margin-top: 20px; border-bottom: 1px solid #32313b; }
+    .tab { position: relative; min-height: 47px; padding: 0 16px; border: 0; background: transparent; color: #aaa9ba; white-space: nowrap; font-size: 15px; }
+    .tab:first-child { padding-left: 16px; }
+    .tab.active { color: #f4f3f6; }
+    .tab.active::after { content: ""; position: absolute; right: 0; bottom: -1px; left: 0; height: 1px; background: var(--lime); }
+    .room-toolbar { min-height: 49px; display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12px; }
+    .room-stats { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; }
+    .room-stats strong { font-weight: 700; }
+    .room-stats span { color: #d3d2da; }
+    .sort-select { padding: 7px 1px 7px 8px; border: 0; background: transparent; color: #eeeef2; font-weight: 650; font-size: 12px; outline: none; }
+    .sort-select option { background: #22222a; }
+    .mod-note { display: grid; grid-template-columns: 17px 1fr; gap: 3px; margin: 1px -4px 10px; padding: 14px 16px; border: 1px solid #e0dfe6; border-radius: 18px; background: #1c1c24; font-size: 12px; line-height: 1.55; }
+    #scanStatus { margin: 12px 0 0; }
+    .mod-icon { padding-top: 1px; color: var(--lime); font-size: 15px; }
+    .mod-note strong { display: block; margin: 0 0 7px; font-weight: 650; }
+    .mod-note p { margin: 0; color: #e0dfe4; }
+    .feed { padding: 0 0 2px; }
+    .message { display: grid; grid-template-columns: 36px minmax(0, 1fr); gap: 12px; padding: 18px 0; border-bottom: 1px solid #30303a; animation: appear .28s ease both; }
+    @keyframes appear { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    .avatar { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 50%; color: #fff; font-size: 12px; font-weight: 700; flex: none; }
+    .avatar.ren { background: #403d5e; }
+    .avatar.tom { background: #2e625d; }
+    .avatar.nova { background: #825c91; }
+    .avatar.me { background: linear-gradient(135deg, #c86bff, #ffbd4c); }
+    .message-body { min-width: 0; }
+    .message-head { display: flex; align-items: baseline; gap: 7px; flex-wrap: wrap; min-height: 23px; }
+    .message-head strong { font-size: 15px; letter-spacing: .1px; }
+    .time { color: #aaa9ba; font-size: 12px; }
+    .spoiler-label { border-radius: 11px; padding: 4px 10px; color: #aaa6bd; background: #292834; font-size: 11px; }
+    .message-text { margin: 4px 0 7px; color: #e4e2e9; font-size: 15px; line-height: 1.48; overflow-wrap: anywhere; }
+    .spoiler-box { width: fit-content; max-width: 100%; margin: 4px 0 7px; padding: 8px 10px; border: 1px solid #3b394d; border-radius: 6px; background: #292838; color: #aaa8b8; font-size: 13px; cursor: pointer; transition: border-color .15s, background .15s; }
+    .spoiler-box:hover { border-color: #716d8c; }
+    .spoiler-box.hidden-spoiler .spoiler-content { filter: blur(4px); user-select: none; }
+    .spoiler-box .click-hint { display: none; }
+    .spoiler-box.hidden-spoiler .click-hint { display: inline; }
+    .message-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; }
+    .small-action { min-height: 32px; padding: 0 10px; border: 1px solid #3a3948; border-radius: 6px; background: #2a2938; color: #a9a6bb; font-size: 12px; transition: background .15s, color .15s; }
+    .small-action:hover { background: #343243; color: #eeedf4; }
+    .small-action.liked { color: #ff9daf; border-color: #59414e; }
+    .small-action.report { display: none; }
+    .message:hover .small-action.report { display: inline-block; }
+    .reply-thread { position: relative; margin: 7px 0 0 -30px; padding-left: 30px; color: #e0dfe6; font-size: 12px; }
+    .reply-thread::before { content: ""; position: absolute; left: 0; top: -16px; width: 25px; height: 24px; border-left: 1px solid #c9c8d0; border-bottom: 1px solid #c9c8d0; }
+    .reply-list { display: none; margin: 10px 0 0 -30px; padding: 9px 0 0 30px; border-left: 1px solid #42414c; }
+    .reply-list.open { display: block; animation: appear .2s ease both; }
+    .reply-item { margin: 0 0 10px; color: #d0ced8; font-size: 12px; line-height: 1.5; }
+    .reply-item strong { color: #f0eef5; margin-right: 5px; }
+    .reply-item span { color: var(--dim); font-size: 10px; margin-left: 5px; }
+    .reply-input { display: flex; gap: 7px; margin: 8px 0 0 -30px; padding-left: 30px; }
+    .reply-input input { min-width: 0; flex: 1; height: 34px; padding: 0 9px; border: 1px solid #393844; border-radius: 6px; background: #191920; color: #eee; outline: none; font-size: 12px; }
+    .reply-input button { border: 0; border-radius: 6px; padding: 0 11px; background: var(--lime); color: var(--lime-ink); font-size: 11px; font-weight: 700; }
+    .composer { position: sticky; bottom: 10px; z-index: 2; margin: 10px 0 0; padding: 12px 15px 10px; border: 1px solid #e0dfe6; border-radius: 18px; background: #1b1b24; box-shadow: 0 12px 30px #0007; }
+    .composer textarea { display: block; width: 100%; min-height: 103px; max-height: 200px; resize: vertical; padding: 13px 4px 10px; border: 0; outline: 0; background: transparent; color: #f5f4f7; font-size: 12px; line-height: 1.5; }
+    .composer textarea::placeholder { color: #e4e2e8; opacity: 1; }
+    .composer-bottom { min-height: 59px; display: flex; justify-content: space-between; align-items: center; gap: 12px; border-top: 1px solid #302f39; }
+    .spoiler-toggle { display: inline-flex; align-items: center; gap: 8px; padding: 9px 1px; border: 0; background: transparent; color: #dfdee4; font-size: 12px; }
+    .radio { width: 16px; height: 16px; border: 2px solid #f1f0f4; border-radius: 50%; display: inline-grid; place-items: center; }
+    .spoiler-toggle[aria-pressed="true"] .radio::after { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--lime); }
+    .post-button { min-height: 48px; padding: 0 16px; border: 0; border-radius: 9px; background: var(--lime); color: var(--lime-ink); font-size: 12px; font-weight: 500; transition: transform .15s, filter .15s; }
+    .post-button:hover { filter: brightness(1.05); }
+    .post-button:active { transform: scale(.97); }
+    .toast { position: fixed; left: 50%; bottom: 18px; z-index: 5; transform: translate(-50%, 14px); opacity: 0; pointer-events: none; max-width: calc(100% - 32px); padding: 11px 15px; border: 1px solid #454451; border-radius: 9px; background: #272631; box-shadow: 0 8px 24px #0009; color: #f3f2f7; font-size: 12px; text-align: center; transition: opacity .2s, transform .2s; }
+    .toast.visible { opacity: 1; transform: translate(-50%, 0); }
+    .empty { padding: 30px 12px; color: var(--muted); text-align: center; font-size: 13px; }
+    @media (min-width: 780px) {
+      body { background: #0b0c11; }
+      .page { padding-inline: 24px; border-inline: 1px solid #25252e; background: var(--bg); }
+      .site-header, .crumb-search { margin-inline: -24px; padding-inline: 24px; }
+      .intro { padding-top: 24px; }
+      .composer { bottom: 16px; }
+    }
+    @media (max-width: 420px) {
+      .crumb-search { gap: 8px; }
+      .crumbs { gap: 6px; font-size: 11px; }
+      .search-wrap { width: 42%; flex-basis: 42%; }
+      .search { height: 42px; padding-inline: 10px; font-size: 13px; }
+      .profile { width: 44px; height: 44px; }
+      .message { gap: 10px; }
+      .composer { padding-inline: 12px; }
+      .tab { padding-inline: 12px; font-size: 14px; }
+      .post-button { padding-inline: 13px; }
+    }
+    @media (prefers-reduced-motion: reduce) { *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; } }
+    /* Compact side-panel layout: show the room, rating, and conversation first. */
+    .page { padding-inline: 12px; }
+    .site-header { height: 58px; margin-inline: -12px; padding-inline: 12px; }
+    .refresh-scan { min-height: 38px; padding: 0 12px; border: 0; border-radius: 8px; background: var(--lime); color: var(--lime-ink); font-size: 11px; font-weight: 750; white-space: nowrap; box-shadow: 0 2px 0 #a1c93c; }
+    .refresh-scan:hover { filter: brightness(1.06); }
+    .refresh-scan:disabled { opacity: .7; cursor: progress; }
+    .brand img.brand-icon { display: none; }
+    .brand-name { display: inline; font-family: Manrope, Inter, ui-sans-serif, system-ui, sans-serif; font-size: 19px; font-weight: 800; letter-spacing: -.8px; }
+    .profile, .crumb-search, .head-actions, .mod-note:not(#scanStatus) { display: none !important; }
+    .intro { padding-top: 0; }
+    .scan-strip { min-height: 37px; display: flex; align-items: center; gap: 8px; padding: 7px 4px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 11px; }
+    .no-room > :not(#scanStatus):not(#manualScan):not(#superLeaderAd) { display: none; }
+    .scan-edit { padding: 7px 4px; color: var(--muted); font-size: 11px; }
+    .scan-edit summary { cursor: pointer; width: fit-content; }
+    .scan-edit form { display: grid; gap: 8px; margin-top: 8px; }
+    .scan-edit label { display: grid; gap: 4px; }
+    .scan-edit input { min-width: 0; width: 100%; padding: 7px 8px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--text); font: inherit; }
+    .scan-edit-numbers { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .scan-edit button { justify-self: start; padding: 7px 10px; border: 0; border-radius: 6px; background: var(--lime); color: var(--lime-ink); font: inherit; font-weight: 700; }
+    .tab[hidden] { display: none; }
+    .scan-dot { color: var(--lime); font-size: 13px; }
+    .scan-copy { min-width: 0; display: flex; align-items: baseline; gap: 7px; flex-wrap: wrap; }
+    .scan-copy strong { color: var(--text); font-size: 11px; font-weight: 650; }
+    .scan-copy small { color: var(--dim); font-size: 10px; }
+    .rating-row { min-height: 68px; display: flex; align-items: center; justify-content: space-between; gap: 10px; border-bottom: 1px solid var(--line); }
+    .rating-row[hidden] { display: none; }
+    .rating-summary { min-width: 105px; display: grid; grid-template-columns: 30px auto; grid-template-rows: auto auto; align-items: center; column-gap: 5px; }
+    .rating-label { grid-column: 1 / -1; color: var(--muted); font-size: 9px; font-weight: 650; letter-spacing: .45px; text-transform: uppercase; margin-bottom: 2px; }
+    .rating-star { grid-row: 2; color: var(--lime); font-size: 26px; line-height: 1; }
+    .rating-value { color: var(--text); font-size: 20px; font-weight: 750; line-height: 1.05; white-space: nowrap; }
+    .rating-denom { color: var(--muted); font-size: 10px; font-weight: 450; }
+    .rating-count { grid-column: 2; color: var(--dim); font-size: 9px; white-space: nowrap; }
+    .rate-button { min-height: 33px; padding: 0 10px; border: 1px solid #484650; border-radius: 7px; background: #22212b; color: var(--lime); display: inline-flex; align-items: center; gap: 5px; font-size: 11px; font-weight: 700; white-space: nowrap; }
+    .rate-button:hover { border-color: var(--lime); background: #292a25; }
+    .follow-button { min-height: 34px; padding: 0 11px; border-radius: 7px; font-size: 11px; white-space: nowrap; }
+    .tabs { margin-top: 0; }
+    .tab { min-height: 42px; padding-inline: 12px; font-size: 13px; }
+    .room-toolbar { min-height: 36px; font-size: 10px; }
+    .room-stats { gap: 9px; }
+    .sort-select { font-size: 10px; }
+    .feed { padding-bottom: 100px; }
+    .message { padding: 13px 0; grid-template-columns: 32px minmax(0, 1fr); gap: 10px; }
+    .avatar { width: 32px; height: 32px; }
+    .message-text { font-size: 14px; }
+    .composer { bottom: 8px; margin: 0 -3px; padding: 7px 10px 6px; border-radius: 13px; background: #1b1b24f5; backdrop-filter: blur(12px); }
+    .composer textarea { min-height: 43px; max-height: 90px; padding: 7px 2px; font-size: 11px; resize: none; }
+    .composer:focus-within textarea { min-height: 62px; }
+    .composer-hint { display: none; margin: 0 2px 6px; color: var(--muted); font-size: 10px; }
+    .composer:focus-within .composer-hint { display: block; }
+    .composer-bottom { min-height: 36px; gap: 7px; }
+    .spoiler-toggle { font-size: 10px; }
+    .radio { width: 14px; height: 14px; }
+    .post-button { min-height: 34px; padding-inline: 12px; font-size: 10px; }
+    .rate-backdrop { position: fixed; inset: 0; z-index: 20; display: grid; place-items: center; padding: 18px; background: #08090dcc; backdrop-filter: blur(4px); }
+    .rate-backdrop[hidden] { display: none; }
+    .rate-dialog { position: relative; width: min(360px, 100%); padding: 22px 20px 18px; border: 1px solid #454450; border-radius: 15px; background: #1b1b24; box-shadow: 0 20px 60px #0009; animation: appear .18s ease both; }
+    .rate-dialog h2 { margin: 0 28px 9px 0; font-size: 18px; letter-spacing: -.3px; }
+    .rate-dialog p { margin: 0; color: #d0ced8; font-size: 13px; line-height: 1.55; }
+    .rate-close { position: absolute; top: 10px; right: 11px; width: 32px; height: 32px; border: 0; border-radius: 7px; background: transparent; color: var(--muted); font-size: 21px; }
+    .rate-close:hover { background: var(--surface-raised); color: var(--text); }
+    .rate-dialog .rate-dismiss { display: block; width: 100%; min-height: 38px; margin-top: 18px; border: 0; border-radius: 8px; background: var(--lime); color: var(--lime-ink); font-size: 12px; font-weight: 700; }
+    .rate-account-label { margin: 16px 0 9px !important; color: var(--lime) !important; font-size: 10px !important; font-weight: 750; }
+    #rateSignInForm,#rateEditor { display: grid; gap: 8px; margin-top: 8px; }
+    #rateEditor[hidden], #rateAccountGate[hidden], .scan-edit[hidden] { display: none; }
+    #rateSignInForm label,#rateEditor>label { color: var(--muted); font-size: 10px; }
+    #rateSignInForm input { width: 100%; height: 38px; padding: 0 10px; border: 1px solid #454450; border-radius: 7px; background: #111119; color: var(--text); font-size: 12px; }
+    .rate-submit { min-height: 38px; margin-top: 3px; border: 0; border-radius: 8px; background: var(--lime); color: var(--lime-ink); font-size: 11px; font-weight: 750; }
+    .rate-join { display: block; margin-top: 11px; color: var(--lime); text-align: center; font-size: 10px; text-decoration: none; }
+    .rate-error { min-height: 0; color: #ffb7b7 !important; font-size: 10px !important; }
+    .rate-input-line { display: flex; align-items: center; gap: 12px; }
+    .rate-input-line input { width: 100%; accent-color: var(--lime); }
+    .rate-input-line output { min-width: 46px; color: var(--lime); font-size: 12px; font-weight: 750; }
+    @media (max-width: 420px) {
+      .page { padding-inline: 10px; }
+      .site-header { margin-inline: -10px; padding-inline: 10px; }
+      .rating-row { gap: 7px; }
+      .rating-summary { min-width: 90px; grid-template-columns: 25px auto; }
+      .rating-star { font-size: 23px; }
+      .rating-value { font-size: 18px; }
+      .follow-button { padding-inline: 8px; }
+    }
+    .feed { padding-bottom: 2px; }
+    .composer { position: relative; bottom: auto; display: grid; grid-template-columns: 30px minmax(0, 1fr); gap: 9px; margin: 4px -2px 12px; padding: 8px 3px 6px; border: 0; border-radius: 0; background: transparent; box-shadow: none; backdrop-filter: none; }
+    .composer-avatar { grid-column: 1; grid-row: 1 / span 2; width: 28px; height: 28px; display: grid; place-items: center; margin-top: 1px; border-radius: 50%; background: linear-gradient(140deg, #c86bff, #ffbd4c); color: white; font-size: 11px; font-weight: 750; }
+    .composer textarea { grid-column: 2; grid-row: 1; min-height: 30px; max-height: 110px; padding: 3px 0 6px; resize: none; border: 0; border-bottom: 1px solid #55545e; border-radius: 0; color: var(--text); font-size: 12px; }
+    .composer textarea::placeholder { color: #9a99a5; }
+    .composer.is-expanded textarea { min-height: 58px; border-bottom-color: #777580; }
+    .composer-hint { display: none; grid-column: 2; margin: 0; color: var(--dim); font-size: 9px; }
+    .composer.is-expanded .composer-hint { display: block; }
+    .composer-bottom { grid-column: 2; min-height: 33px; display: none; align-items: center; justify-content: space-between; gap: 8px; border: 0; }
+    .composer.is-expanded .composer-bottom { display: flex; }
+    .composer-tools, .composer-actions { display: flex; align-items: center; gap: 7px; }
+    .composer .spoiler-toggle { min-height: 30px; gap: 5px; padding: 0 2px; color: #cac9d2; font-size: 10px; }
+    .composer .spoiler-toggle[aria-pressed="true"] { color: var(--lime); }
+    .composer .radio { width: 13px; height: 13px; }
+    .emoji-button { width: 28px; height: 28px; padding: 0; border: 0; border-radius: 50%; background: transparent; color: #d6d5dd; font-size: 17px; }
+    .emoji-button:hover, .emoji-button[aria-expanded="true"] { background: #292832; color: var(--lime); }
+    .emoji-picker { position: absolute; left: 40px; bottom: 48px; display: none; gap: 3px; padding: 5px; border: 1px solid #42414c; border-radius: 8px; background: #24232d; box-shadow: 0 8px 20px #0008; }
+    .emoji-picker.open { display: flex; }
+    .emoji-picker button { width: 30px; height: 30px; border: 0; border-radius: 5px; background: transparent; font-size: 17px; }
+    .emoji-picker button:hover { background: #34333f; }
+    .composer .cancel-button, .composer .post-button { min-height: 30px; padding: 0 10px; border-radius: 6px; font-size: 10px; }
+    .composer .cancel-button { border: 0; background: transparent; color: var(--muted); }
+    .composer .cancel-button:hover { color: var(--text); }
+    .composer .post-button:disabled { filter: grayscale(1); opacity: .55; cursor: default; }
+    .composer .post-button:not(:disabled) { font-weight: 700; }
+    .page { display: flex; flex-direction: column; }
+    main { flex: 1; display: flex; flex-direction: column; min-height: 0; }
+    .feed { flex: 1 0 auto; }
+    .super-leader-ad { position: relative; isolation: isolate; display: flex; flex-direction: column; min-height: 205px; overflow: hidden; margin: 18px -2px 0; padding: 14px; border: 1px solid #a45522; border-radius: 11px; background: #512307; color: #ffe1b5; }
+    .super-leader-ad::before { content: ''; position: absolute; z-index: -2; inset: 0 0 0 36%; background: url('images/anime.jpg') center 47% / cover no-repeat; }
+    .super-leader-ad::after { content: ''; position: absolute; z-index: -1; inset: 0; background: linear-gradient(90deg,#512307 0%,#512307 30%,#512307f2 43%,#5123079c 72%,#51230718 100%); }
+    .super-leader-ad h2 { max-width: 235px; margin: 2px 0 0; font-size: 22px; line-height: 1.05; letter-spacing: -.045em; }
+    .super-leader-ad ul { display: grid; gap: 5px; max-width: 220px; margin: 10px 0 0; padding: 0; list-style: none; }
+    .super-leader-ad li { display: flex; align-items: center; gap: 7px; font-size: 10px; font-weight: 750; line-height: 1.25; }
+    .super-leader-ad li::before { content: '✓'; flex: none; display: grid; place-items: center; width: 15px; height: 15px; border-radius: 50%; background: #ffd098; color: #512307; font-size: 9px; }
+    .super-leader-ad__action { display: flex; align-items: center; margin-top: auto; padding-top: 10px; }
+    .super-leader-ad__action a { width: 100%; display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 42px; padding: 0 15px; border: 1px solid #d4ff8e; border-radius: 7px; background: #b9f45c; color: #18300a; font-size: 14px; font-weight: 850; text-decoration: none; }
+    .super-leader-ad__action a span { font-size: 24px; font-weight: 500; line-height: 1; }
+    .super-leader-ad__action a:hover, .super-leader-ad__action a:focus-visible { background: #d4ff8e; }
+  </style>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="homepage.css">
+  <link rel="icon" type="image/png" sizes="74x74" href="logo/fandom-room-icon.png">
+</head>
+<body>
+  <div class="page">
+    <header class="site-header">
+      <a class="brand" href="#" aria-label="Fandom Room home"><img class="brand-icon" src="logo/fandom-room-icon.png" alt="" width="36" height="36"><span class="brand-name">Fandom <span>room</span></span></a>
+      <button class="refresh-scan" id="refreshScan" type="button">↻&nbsp; Refresh &amp; scan</button>
+    </header>
+    <main>
+      <aside class="scan-strip" id="scanStatus" role="status" aria-live="polite"><span class="scan-dot" aria-hidden="true">●</span><span class="scan-copy"><strong id="scanTitle">Waiting for a page scan</strong><small id="scanMessage">Open a viewing page, then click Fandom Room.</small></span></aside>
+      <details class="scan-edit" id="manualScan" hidden>
+        <summary id="manualScanLabel">Enter title and episode</summary>
+        <form id="manualScanForm">
+          <label>Title <input id="manualTitle" type="text" maxlength="180" required></label>
+          <div class="scan-edit-numbers">
+            <label>Season (optional) <input id="manualSeason" type="text" inputmode="numeric" pattern="[0-9]{1,3}"></label>
+            <label>Episode (optional) <input id="manualEpisode" type="text" inputmode="decimal" pattern="[0-9]{1,4}(\.[0-9]{1,2})?"></label>
+          </div>
+          <button type="submit">Open discussion</button>
+        </form>
+      </details>
+      <section class="rating-row" id="ratingBlock" aria-label="Episode rating">
+        <div class="rating-summary" aria-label="No episode rating yet">
+          <span class="rating-label">Episode rating</span><span class="rating-star" aria-hidden="true">★</span><span><strong class="rating-value">—</strong><span class="rating-denom"> / 10</span><small class="rating-count">No ratings yet</small></span>
+        </div>
+        <button class="rate-button" id="rateButton" type="button" aria-haspopup="dialog"><span aria-hidden="true">☆</span> Rate episode</button>
+        <button class="follow-button" id="followButton" aria-pressed="false"><span>＋</span> Follow show</button>
+      </section>
+      <nav class="tabs" aria-label="Discussion scope">
+        <button class="tab active" id="episodeTab" role="tab" aria-selected="true">Episode discussion</button>
+        <button class="tab" id="animeTab" role="tab" aria-selected="false">Whole show discussion</button>
+      </nav>
+      <div class="room-toolbar">
+        <div class="room-stats"><strong id="messageCount">128 messages</strong><span id="onlineCount">25 super fans here</span></div>
+        <select id="sortOrder" class="sort-select" aria-label="Sort discussion">
+          <option value="newest">Newest first&nbsp; ⌄</option>
+          <option value="oldest">Oldest first&nbsp; ⌄</option>
+        </select>
+      </div>
+      <form class="composer" id="composer">
+        <div class="composer-avatar" aria-hidden="true">N</div>
+        <textarea id="messageInput" placeholder="What did you think about the episode?" aria-label="What did you think about the episode?" maxlength="2000" rows="1"></textarea>
+        <p class="composer-hint" id="composerHint">Leaving a spoiler? Mark it before posting.</p>
+        <div class="composer-bottom">
+          <div class="composer-tools">
+            <button type="button" class="spoiler-toggle" id="spoilerToggle" aria-pressed="false"><span class="radio"></span> Spoiler</button>
+            <button type="button" class="emoji-button" id="emojiButton" aria-label="Add emoji" aria-expanded="false">☺</button>
+          </div>
+          <div class="composer-actions">
+            <button type="button" class="cancel-button" id="cancelComment">Cancel</button>
+            <button type="submit" class="post-button" id="postComment" disabled>Comment</button>
+          </div>
+        </div>
+        <div class="emoji-picker" id="emojiPicker" role="group" aria-label="Choose an emoji">
+          <button type="button" aria-label="Smiling face">😊</button><button type="button" aria-label="Laughing">😂</button><button type="button" aria-label="Heart">❤️</button><button type="button" aria-label="Surprised">😮</button><button type="button" aria-label="Crying">😭</button>
+        </div>
+      </form>
+      <section class="feed" id="feed" aria-label="Discussion messages" aria-live="polite"></section>
+      <aside class="super-leader-ad" id="superLeaderAd" aria-labelledby="superLeaderTitle">
+        <h2 id="superLeaderTitle">Become a Super Fan 👑 and:</h2>
+        <ul><li>Review all anime</li><li>Create your own polls</li><li>Create your own rankings</li></ul>
+        <div class="super-leader-ad__action"><a href="https://www.fandomroom.com/#community" target="_blank" rel="noopener noreferrer">Start creating <span aria-hidden="true">→</span></a></div>
+      </aside>
+    </main>
+  </div>
+  <div class="rate-backdrop" id="rateGate" hidden>
+    <section class="rate-dialog" role="dialog" aria-modal="true" aria-labelledby="rateTitle" aria-describedby="rateCopy" tabindex="-1">
+      <button class="rate-close" id="rateClose" type="button" aria-label="Close">×</button>
+      <h2 id="rateTitle">Ratings from real fans</h2>
+      <p id="rateCopy">To keep ratings true to the community and prevent review bombing, only Premium members can rate. Subscribe to become a Premium member.</p>
+      <div id="rateAccountGate"><p class="rate-account-label">Already a Fandom Room member?</p><form id="rateSignInForm"><label for="rateEmail">Email address</label><input id="rateEmail" type="email" autocomplete="email" required><label for="ratePassword">Password</label><input id="ratePassword" type="password" autocomplete="current-password" required><p class="rate-error" id="rateError" role="alert"></p><button class="rate-submit" id="rateSignInButton" type="submit">Sign in and check access</button></form><a class="rate-join" href="https://www.fandomroom.com/" target="_blank" rel="noopener">Explore Fandom Room Premium ↗</a></div>
+      <form id="rateEditor" hidden><label for="episodeScore">Your rating</label><div class="rate-input-line"><input id="episodeScore" type="range" min="1" max="10" step="1" value="8"><output id="episodeScoreValue" for="episodeScore">8 / 10</output></div><p class="rate-error" id="rateSaveStatus" role="status"></p><button class="rate-submit" type="submit">Save my rating</button></form>
+      <button class="rate-dismiss" id="rateDismiss" type="button">Close</button>
+    </section>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <script src="supabase/config.js" defer></script>
+  <script src="supabase/client.js" defer></script>
+  <script src="app.js" defer></script>
+</body>
+</html>
+
+
+

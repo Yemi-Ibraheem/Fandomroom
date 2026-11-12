@@ -1,0 +1,27 @@
+- main [ref=f1e2]:
+  - 'region "Creative one: Make every anime count" [ref=f1e3]':
+    - generic [ref=f1e4]:
+      - generic [ref=f1e5]: Fandom Room · Go further
+      - generic [aria-hidden] [ref=f1e6]: ✦
+    - heading "Make every anime count." [level=2] [ref=f1e7]
+    - paragraph [ref=f1e8]: Review every anime. Create polls and rankings.
+    - generic [ref=f1e9]:
+      - paragraph [ref=f1e10]: Lead the conversation as a Super Leader.
+      - generic [ref=f1e11]: Start creating ↗
+  - 'region "Creative two: Start a debate" [ref=f1e12]':
+    - generic [ref=f1e13]: Super Leader · The debate
+    - heading "Settle the next anime debate." [level=2] [ref=f1e15]
+    - paragraph [ref=f1e19]: Review the show. Ask the fandom. Rank the answers.
+    - generic [ref=f1e20]:
+      - paragraph [ref=f1e21]: Your take starts the room.
+      - generic [ref=f1e22]: Start a poll ↗
+  - 'region "Creative three: Show your taste" [ref=f1e23]':
+    - generic [ref=f1e24]:
+      - text: Super Leader · Your list
+      - heading "Your anime taste, ranked." [level=2] [ref=f1e25]
+      - paragraph [ref=f1e26]: Review every anime. Build rankings fans can challenge.
+      - generic [ref=f1e27]: Build a ranking ↗
+    - generic [aria-hidden] [ref=f1e28]:
+      - generic [ref=f1e29]: "01"
+      - generic [ref=f1e30]: "02"
+      - generic [ref=f1e31]: "03"

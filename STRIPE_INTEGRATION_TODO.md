@@ -13,7 +13,7 @@ Set these variables for the Vercel **Production** environment, then redeploy:
 | Variable | Purpose |
 | --- | --- |
 | `STRIPE_SECRET_KEY` | Live Stripe API access for Checkout and subscription lookups |
-| `STRIPE_PREMIUM_PRICE_ID` | Recurring Premium Price ID (`price_...`) |
+| `STRIPE_PREMIUM_PRICE_ID` or `STRIPE_PRICE_MONTHLY` | Recurring Premium Price ID (`price_...`); the dedicated Premium variable takes precedence |
 | `STRIPE_WEBHOOK_SECRET` | Signing secret for the live `Fandomroom production` webhook destination |
 | `SUPABASE_URL` | Supabase project URL, not a publishable key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Server-only key used to update Supabase Auth user metadata |

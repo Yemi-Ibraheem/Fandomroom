@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#10110f">
+  <meta name="description" content="Send Fandom Room a suggestion, bug report, or complaint.">
+  <title>Support — Fandom Room</title>
+  <link rel="icon" type="image/png" sizes="74x74" href="logo/fandom-room-icon.png">
+  <link rel="stylesheet" href="website.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="homepage.css">
+</head>
+<body class="privacy-body support-body" data-theme="dark">
+  <div class="shell privacy-shell">
+    <header class="topbar privacy-topbar">
+      <a class="brand" href="/" aria-label="Fandom Room home"><img class="brand-icon" src="logo/fandom-room-icon.png" alt="" width="36" height="36"><span class="brand-name">fandom <span>room</span></span></a>
+      <nav class="nav"><a href="/">Discover</a><a class="current" href="/support.html" aria-current="page">Support</a></nav>
+    </header>
+    <main class="support-content">
+      <div class="eyebrow">FANDOM ROOM · WE’RE LISTENING</div>
+      <h1>How can we help?</h1>
+      <p class="privacy-lede">Share an idea, let us know about a bug, or tell us what went wrong.</p>
+      <form class="support-form" id="supportForm">
+        <div class="field">
+          <label for="supportType">What would you like to send?</label>
+          <select id="supportType" name="type" required>
+            <option value="suggestion">Suggestion</option>
+            <option value="bug">Bug report</option>
+            <option value="complaint">Complaint</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="supportMessage">Your message</label>
+          <textarea id="supportMessage" name="message" minlength="5" maxlength="5000" placeholder="Tell us a little more…" required></textarea>
+        </div>
+        <div class="field">
+          <label for="supportEmail">Email address <span class="optional">Optional</span></label>
+          <input id="supportEmail" name="email" type="email" maxlength="254" autocomplete="email" placeholder="So we can reply to you">
+        </div>
+        <p class="support-status" id="supportStatus" role="status" aria-live="polite"></p>
+        <button class="publish support-submit" id="supportSubmit" type="submit">Send to Fandom Room</button>
+      </form>
+      <p class="support-direct">You can also email <a href="mailto:info@fandomroom.com">info@fandomroom.com</a>.</p>
+    </main>
+    <footer class="site-footer"><nav aria-label="Legal"><a href="/privacy.html">Privacy</a><a href="/terms.html">Terms of Service</a><a href="/support.html" aria-current="page">Support</a></nav><span>© Fandom Room</span></footer>
+  </div>
+  <script>
+    const form = document.getElementById('supportForm');
+    const status = document.getElementById('supportStatus');
+    const submit = document.getElementById('supportSubmit');
+    form.addEventListener('submit', async event => {
+      event.preventDefault();
+      if (!form.reportValidity()) return;
+      status.textContent = '';
+      submit.disabled = true;
+      submit.textContent = 'Sending…';
+      try {
+        const response = await fetch('/api/support', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: form.elements.type.value, message: form.elements.message.value, email: form.elements.email.value }) });
+        if (!response.ok) throw new Error(await response.text());
+        form.reset();
+        status.textContent = 'Thanks — your message has been sent to the Fandom Room team.';
+        status.dataset.state = 'success';
+      } catch {
+        status.textContent = 'We couldn’t send that just now. Please try again or email info@fandomroom.com.';
+        status.dataset.state = 'error';
+      } finally {
+        submit.disabled = false;
+        submit.textContent = 'Send to Fandom Room';
+      }
+    });
+  </script>
+</body>
+</html>

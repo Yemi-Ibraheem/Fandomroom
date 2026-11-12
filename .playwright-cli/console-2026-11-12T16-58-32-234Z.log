@@ -1,0 +1,1 @@
+[     812ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://zbayifekoqasimvqreav.supabase.co/rest/v1/media_ratings?select=rating&anime_slug=eq.jujutsu-kaisen&scope=eq.episode&season=eq.Season+2&episode=eq.Episode+07:1

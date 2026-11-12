@@ -1,0 +1,20 @@
+- main [ref=e2]:
+  - generic [ref=e5]:
+    - heading "Become a Super Fan 👑 and:" [level=2] [ref=e6]
+    - list [ref=e7]:
+      - listitem [ref=e8]: ✓ Review all anime
+      - listitem [ref=e9]: ✓ Create your own polls
+      - listitem [ref=e10]: ✓ Create your own rankings
+    - generic [ref=e11]: Start creating 👑
+  - generic [ref=e14]:
+    - generic [ref=e15]: Fandom Room · Super Leader
+    - heading "Your take. Their vote." [level=2] [ref=e16]
+    - paragraph [ref=e17]: Review anime. Create polls. Rank the favourites.
+    - generic [ref=e18]: Start a poll ↗
+  - generic [ref=e22]:
+    - generic [ref=e23]: Fandom Room · Super Leader
+    - heading [level=2] [ref=e24]:
+      - text: Watch it.Rate it.
+      - emphasis [ref=e25]: Rank it.
+    - paragraph [ref=e26]: Review anime. Create polls. Rank the best.
+    - generic [ref=e27]: Build a ranking ↗

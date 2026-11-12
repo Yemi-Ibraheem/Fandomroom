@@ -1,0 +1,41 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - link "Fandom Room home" [ref=e4] [cursor=pointer]:
+        - /url: "#"
+        - generic [ref=e5]: Fandom room
+    - main [ref=e6]:
+      - status [ref=e7]:
+        - generic [aria-hidden] [ref=e8]: ●
+        - generic [ref=e9]:
+          - strong [ref=e10]: Waiting for a page scan
+          - generic [ref=e11]: Open a viewing page, then click Fandom Room.
+      - region "Show rating" [ref=e35]:
+        - generic "No show rating yet" [ref=e36]:
+          - generic [ref=e14]: show rating
+          - generic [aria-hidden] [ref=e15]: ★
+          - generic [ref=e16]:
+            - strong [ref=e17]: —
+            - text: / 10No ratings yet
+        - button "Rate show" [ref=e37]:
+          - generic [aria-hidden] [ref=e38]: ☆
+          - text: Rate show
+        - button "＋ Follow show" [ref=e20]:
+          - generic [ref=e21]: ＋
+          - text: Follow show
+      - navigation "Discussion scope" [ref=e22]:
+        - tab "Episode discussion" [ref=e23]
+        - tab "Whole show discussion" [active] [selected] [ref=e24]
+      - generic [ref=e25]:
+        - generic [ref=e26]:
+          - strong [ref=e27]: 0 posts
+          - generic [ref=e28]: Shared community room
+        - combobox "Sort discussion" [ref=e29]:
+          - option "Newest first ⌄" [selected]
+          - option "Oldest first ⌄"
+      - generic [ref=e30]:
+        - generic [aria-hidden] [ref=e31]: "N"
+        - textbox "What did you think about the show?" [ref=e39]
+      - region "Discussion messages" [ref=e33]:
+        - generic [ref=e40]: No messages here yet. Start the conversation.
+  - status: Anonymous sign-ins are disabled
