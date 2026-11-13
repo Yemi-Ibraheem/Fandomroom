@@ -193,5 +193,18 @@
       method: 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify({ thread_id: id, parent_id: parentId, author_id: active.user.id, body })
     }, true);
   }
-  globalThis.FandomRoomWeb = { configured: Boolean(baseUrl && apiKey), getSession, resumeLinkSession, signUp, signIn, signInWithGoogle, isUsernameAvailable, signOut, createThread, listThreads, loadThread, loadMyResponse, pollResults, rankingResults, vote, rank, loadComments, addComment };
+  async function listArticles() { return request(`blog_posts?${params({ select: 'id,slug,title,excerpt,cover_image,topic,published_at,author:profiles!blog_posts_author_id_fkey(username)', published: 'eq.true', order: 'published_at.desc', limit: '50' })}`); }
+  async function loadArticle(slug) { const rows = await request(`blog_posts?${params({ select: 'id,slug,title,excerpt,content,cover_image,topic,published_at,author_id,author:profiles!blog_posts_author_id_fkey(username)', slug: `eq.${slug}`, limit: '1' })}`); return rows[0] || null; }
+  async function isBlogEditor() { const active = await getSession(); if (!active) return false; const rows = await request(`blog_editors?${params({ select: 'user_id', user_id: `eq.${active.user.id}`, limit: '1' })}`, {}, true); return rows.length > 0; }
+  async function saveArticle(article, publish = false) {
+    const active = await getSession(); if (!active) throw new Error('Sign in to save an article.');
+    const payload = { slug: article.slug, title: article.title, excerpt: article.excerpt, content: article.content, topic: article.topic || 'Anime', cover_image: article.cover_image || null, published: publish, published_at: publish ? (article.published_at || new Date().toISOString()) : null, updated_at: new Date().toISOString() };
+    const path = article.id ? `blog_posts?id=eq.${encodeURIComponent(article.id)}` : 'blog_posts';
+    const response = await request(path, { method: article.id ? 'PATCH' : 'POST', headers: { Prefer: 'return=representation' }, body: JSON.stringify(article.id ? payload : { ...payload, author_id: active.user.id }) }, true);
+    return Array.isArray(response) ? response[0] : response;
+  }
+  async function uploadBlogCover(file, ownerId) { if (!file || !/^image\/(jpeg|png|webp)$/.test(file.type) || file.size > 5 * 1024 * 1024) throw new Error('Use a JPG, PNG or WebP cover image up to 5 MB.'); const ext = file.type.split('/')[1].replace('jpeg','jpg'); const path = `${ownerId}/${crypto.randomUUID()}.${ext}`; const active = await getSession(); const response = await fetch(`${baseUrl}/storage/v1/object/blog-images/${path}`, { method:'POST', headers:{ apikey:apiKey, Authorization:`Bearer ${active.access_token}`, 'Content-Type':file.type }, body:file }); if (!response.ok) { const err=await response.json().catch(()=>({})); throw new Error(err.message || 'Could not upload the cover image.'); } return `${baseUrl}/storage/v1/object/public/blog-images/${path}`; }
+  async function listBlogComments(postId) { return request(`blog_comments?${params({ select: 'id,body,created_at,author:profiles!blog_comments_author_id_fkey(username)', post_id: `eq.${postId}`, order: 'created_at.asc' })}`); }
+  async function addBlogComment(postId, body) { const active = await getSession(); if (!active) throw new Error('Sign in to comment.'); return request('blog_comments', { method:'POST', headers:{ Prefer:'return=minimal' }, body:JSON.stringify({ post_id:postId, author_id:active.user.id, body }) }, true); }
+  globalThis.FandomRoomWeb = { configured: Boolean(baseUrl && apiKey), getSession, resumeLinkSession, signUp, signIn, signInWithGoogle, isUsernameAvailable, signOut, createThread, listThreads, loadThread, loadMyResponse, pollResults, rankingResults, vote, rank, loadComments, addComment, listArticles, loadArticle, isBlogEditor, saveArticle, uploadBlogCover, listBlogComments, addBlogComment };
 })();

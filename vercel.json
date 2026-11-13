@@ -1,0 +1,11 @@
+{
+  "functions": {
+    "api/blog-index.js": { "includeFiles": "threads.html" }
+  },
+  "rewrites": [
+    { "source": "/threads/sitemap.xml", "destination": "/api/threads-sitemap" },
+    { "source": "/threads/:slug", "destination": "/api/blog-article?slug=:slug" },
+    { "source": "/threads", "destination": "/api/blog-index" },
+    { "source": "/threads/", "destination": "/api/blog-index" }
+  ]
+}

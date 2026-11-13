@@ -465,7 +465,7 @@
     });
     $('#authTabSignup').addEventListener('click', () => { authMode = 'signup'; updateAuthMode(); });
     $('#authTabSignin').addEventListener('click', () => { authMode = 'signin'; updateAuthMode(); });
-    $('#createButton').addEventListener('click', () => requireAuth(openCreate));
+    $('#createButton').addEventListener('click', () => requirePremium(openCreate));
     $('#createForm').addEventListener('submit', event => { event.preventDefault(); requireAuth(() => submitCreate(event)); });
     $('#createType').addEventListener('change', event => {
       const poll = event.target.value === 'poll';
