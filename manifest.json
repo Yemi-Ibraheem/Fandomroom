@@ -17,7 +17,8 @@
   "host_permissions": [
     "https://*.animeheaven.me/*",
     "https://*.crunchyroll.com/*",
-    "https://zbayifekoqasimvqreav.supabase.co/*"
+    "https://zbayifekoqasimvqreav.supabase.co/*",
+    "https://translate.googleapis.com/*"
   ],
   "background": {
     "service_worker": "service-worker.js"

@@ -424,7 +424,7 @@
   function initTheme() {
     const body = document.body;
     const savedTheme = localStorage.getItem('fandomroom-theme');
-    body.dataset.theme = savedTheme === 'dark' ? 'dark' : 'light';
+    body.dataset.theme = savedTheme === 'light' ? 'light' : 'dark';
     const button = $('#themeToggle');
     const updateButton = () => {
       const dark = body.dataset.theme === 'dark';

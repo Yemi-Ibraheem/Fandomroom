@@ -19,6 +19,8 @@
     };
     const $ = (selector, root = document) => root.querySelector(selector);
     const feed = $('#feed');
+    const translationLanguages = { fr: { flag: '🇫🇷', name: 'French' }, es: { flag: '🇪🇸', name: 'Spanish' }, pt: { flag: '🇧🇷', name: 'Portuguese' }, ja: { flag: '🇯🇵', name: 'Japanese' } };
+    let translationLanguage = localStorage.getItem('fandomroom-translation-language') || 'fr';
     const extensionMode = Boolean(globalThis.chrome?.runtime?.id);
     let roomReady = !extensionMode;
     let mediaKind = 'series';
@@ -40,6 +42,49 @@
       clearTimeout(toastTimer); toastTimer = setTimeout(() => el.classList.remove('visible'), 2200);
     }
     function escapeText(value) { const div = document.createElement('div'); div.textContent = value; return div.innerHTML; }
+    function setTranslationLanguage(language) {
+      translationLanguage = translationLanguages[language] ? language : 'fr';
+      $('#toolTranslationLanguage').value = translationLanguage;
+      $('#toolLanguageFlag').textContent = translationLanguages[translationLanguage].flag;
+      localStorage.setItem('fandomroom-translation-language', translationLanguage);
+    }
+    async function translateComment(button, original, source, outputParent) {
+      const output = [...outputParent.children].find(child => child.classList.contains('translation-text'));
+      if (output && !output.hidden && output.dataset.language === translationLanguage) {
+        output.hidden = true;
+        source.hidden = false;
+        button.textContent = `Show translation · ${translationLanguages[translationLanguage].name}`;
+        return;
+      }
+      const language = translationLanguage;
+      button.disabled = true;
+      button.textContent = 'Translating…';
+      try {
+        const query = new URLSearchParams({ client: 'gtx', sl: 'auto', tl: language, dt: 't', q: original });
+        const response = await fetch(`https://translate.googleapis.com/translate_a/single?${query}`);
+        if (!response.ok) throw new Error('Translation unavailable');
+        const result = await response.json();
+        const translated = (result[0] || []).map(part => part[0] || '').join('');
+        if (!translated) throw new Error('No translation returned');
+        let translatedText = [...outputParent.children].find(child => child.classList.contains('translation-text'));
+        if (!translatedText) {
+          translatedText = document.createElement('span');
+          translatedText.className = 'translation-text';
+          source.after(translatedText);
+        }
+        translatedText.textContent = translated;
+        translatedText.dataset.language = language;
+        translatedText.hidden = false;
+        source.hidden = true;
+        button.textContent = 'Show original';
+      } catch {
+        button.textContent = 'Translation unavailable · try again';
+      } finally {
+        button.disabled = false;
+      }
+    }
+    setTranslationLanguage(translationLanguage);
+    $('#toolTranslationLanguage').addEventListener('change', event => setTranslationLanguage(event.target.value));
     function render() {
       const newestFirst = $('#sortOrder').value === 'newest';
       const list = [...messages[scope]].sort((a, b) => newestFirst ? Date.parse(b.createdAt || '') - Date.parse(a.createdAt || '') : Date.parse(a.createdAt || '') - Date.parse(b.createdAt || ''));
@@ -55,12 +100,21 @@
       const safeText = escapeText(message.text);
       article.innerHTML = `<div class="avatar ${message.avatar || 'me'}">${escapeText(message.initials || 'N')}</div>
         <div class="message-body"><div class="message-head"><strong>${escapeText(message.user)}</strong><span class="time">${escapeText(message.time || 'just now')}</span>${message.spoiler ? '<span class="spoiler-label">Spoiler</span>' : ''}</div>
-        ${message.spoiler ? `<button type="button" class="spoiler-box hidden-spoiler" aria-label="Reveal spoiler"><span class="click-hint">Contains spoilers · Click to reveal</span><span class="spoiler-content">${safeText}</span></button>` : `<p class="message-text">${safeText}</p>`}
-        <div class="message-actions"><button type="button" class="small-action like ${message.liked ? 'liked' : ''}" aria-pressed="${Boolean(message.liked)}">♥&nbsp; ${message.likes || 0}</button><button type="button" class="small-action reply-button">Reply</button><button type="button" class="small-action report">Report</button></div>
+        ${message.spoiler ? `<button type="button" class="spoiler-box hidden-spoiler" aria-label="Reveal spoiler"><span class="click-hint">Contains spoilers · Click to reveal</span><span class="spoiler-content" data-translation-source>${safeText}</span></button>` : `<p class="message-text" data-translation-source>${safeText}</p>`}
+        <div class="message-actions"><button type="button" class="small-action like ${message.liked ? 'liked' : ''}" aria-pressed="${Boolean(message.liked)}">♥&nbsp; ${message.likes || 0}</button><button type="button" class="small-action reply-button">Reply</button><button type="button" class="small-action translation-action" data-translate-message ${message.spoiler ? 'hidden' : ''}>Show translation · ${translationLanguages[translationLanguage].name}</button><button type="button" class="small-action report">Report</button></div>
         ${message.replies?.length ? `<div class="reply-thread"><button type="button" class="small-action replies-button">${message.replies.length} ${message.replies.length === 1 ? 'Reply' : 'Replies'}</button></div>` : ''}
-        <div class="reply-list">${(message.replies || []).map(reply => `<p class="reply-item"><strong>${escapeText(reply.user)}</strong>${escapeText(reply.text)}<span>${escapeText(reply.time || '')}</span></p>`).join('')}</div>
+        <div class="reply-list">${(message.replies || []).map(reply => `<p class="reply-item"><strong>${escapeText(reply.user)}</strong><span class="reply-original" data-translation-source>${escapeText(reply.text)}</span><span class="reply-time">${escapeText(reply.time || '')}</span><button type="button" class="small-action translation-action" data-translate-reply>Show translation · ${translationLanguages[translationLanguage].name}</button></p>`).join('')}</div>
         <form class="reply-input" hidden><input aria-label="Write a reply" placeholder="Write a reply…" maxlength="500"><button type="submit">Reply</button></form></div>`;
-      $('.spoiler-box', article)?.addEventListener('click', e => { e.currentTarget.classList.remove('hidden-spoiler'); e.currentTarget.disabled = true; });
+      $('.spoiler-box', article)?.addEventListener('click', e => { e.currentTarget.classList.remove('hidden-spoiler'); e.currentTarget.disabled = true; $('[data-translate-message]', article).hidden = false; });
+      $('[data-translate-message]', article).addEventListener('click', event => {
+        const source = $('[data-translation-source]', article);
+        const visibleSource = message.spoiler ? source.closest('.spoiler-box') : source;
+        translateComment(event.currentTarget, message.text, visibleSource, article.querySelector('.message-body'));
+      });
+      article.querySelectorAll('[data-translate-reply]').forEach(button => button.addEventListener('click', () => {
+        const row = button.closest('.reply-item');
+        translateComment(button, $('.reply-original', row).textContent, $('.reply-original', row), row);
+      }));
       $('.like', article).addEventListener('click', async e => {
         const target = messages[scope].find(m => m.id === message.id); if (!target) return;
         const wasLiked = Boolean(target.liked); target.liked = !wasLiked; target.likes = Math.max(0, (target.likes || 0) + (target.liked ? 1 : -1)); render();
