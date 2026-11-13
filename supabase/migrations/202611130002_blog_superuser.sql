@@ -22,8 +22,9 @@ for each row execute function public.grant_fandomroom_blog_superuser();
 -- Blog editors can see drafts and manage all articles; Premium members manage their own.
 drop policy if exists "Published articles are public" on public.blog_posts;
 create policy "Published articles are public" on public.blog_posts
-for select to anon, authenticated
-using (
+for select to anon using (published);
+create policy "Authenticated authors and editors can read articles" on public.blog_posts
+for select to authenticated using (
   published
   or author_id = (select auth.uid())
   or exists(select 1 from public.blog_editors e where e.user_id = (select auth.uid()))
