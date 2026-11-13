@@ -1,11 +1,11 @@
 {
   "functions": {
-    "api/blog-index.js": { "includeFiles": "threads.html" }
+    "api/blog-index.js": { "includeFiles": "blog.html" }
   },
   "rewrites": [
-    { "source": "/threads/sitemap.xml", "destination": "/api/threads-sitemap" },
-    { "source": "/threads/:slug", "destination": "/api/blog-article?slug=:slug" },
-    { "source": "/threads", "destination": "/api/blog-index" },
-    { "source": "/threads/", "destination": "/api/blog-index" }
+    { "source": "/blog/sitemap.xml", "destination": "/api/blog-sitemap" },
+    { "source": "/blog/:slug", "destination": "/api/blog-article?slug=:slug" },
+    { "source": "/blog", "destination": "/api/blog-index" },
+    { "source": "/blog/", "destination": "/api/blog-index" }
   ]
 }

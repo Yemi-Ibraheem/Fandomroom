@@ -1,4 +1,4 @@
--- Public editorial articles and their comments for the /threads section.
+-- Public editorial articles and their comments for the /blog section.
 create table if not exists public.blog_editors (
   user_id uuid primary key references auth.users(id) on delete cascade,
   created_at timestamptz not null default now()

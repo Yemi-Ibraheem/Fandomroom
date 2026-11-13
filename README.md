@@ -1,6 +1,6 @@
 # Fandom Room
 
-Fandom Room is the public discussion site at https://www.fandomroom.com, with a Manifest V3 Chrome extension companion. The editorial section lives at https://www.fandomroom.com/threads. Published articles have clean, server-rendered URLs and public comments.
+Fandom Room is the public discussion site at https://www.fandomroom.com, with a Manifest V3 Chrome extension companion. The editorial section lives at https://www.fandomroom.com/blog. Published articles have clean, server-rendered URLs and public comments.
 
 ## Load the unpacked extension
 
@@ -30,7 +30,7 @@ The extension creates an anonymous Supabase identity and keeps its session in th
 
 The website signup form asks for a username and country. Usernames are public and unique without regard to capitalization. Country is saved privately in the account's Auth metadata.
 
-## Enable Threads articles and Premium publishing
+## Enable Blog articles and Premium publishing
 
 After the existing migrations, run [`supabase/migrations/202611130001_editorial_threads.sql`](supabase/migrations/202611130001_editorial_threads.sql) in Supabase SQL Editor. Sign in to Fandom Room once with the account that should always have publishing access, then add that account as an editor in SQL Editor:
 
@@ -40,9 +40,9 @@ select id from auth.users where email = 'YOUR-ACCOUNT-EMAIL'
 on conflict (user_id) do nothing;
 ```
 
-Your account can publish through `/threads` on any plan. Active Premium members can also publish their own articles. Creating new image polls and rankings is now a Premium feature, enforced by the database as well as the site interface. Article comments are public to read and require a signed-in account to post. The migration creates the `blog-images` public cover bucket and the article/comment tables with row-level access policies.
+Your account can publish through `/blog` on any plan. Active Premium members can also publish their own articles. Creating new image polls and rankings is now a Premium feature, enforced by the database as well as the site interface. Article comments are public to read and require a signed-in account to post. The migration creates the `blog-images` public cover bucket and the article/comment tables with row-level access policies.
 
-Vercel routes `/threads` to the editorial index and `/threads/{slug}` to server-rendered article HTML with canonical, Open Graph, Twitter, and BlogPosting metadata. `/threads/sitemap.xml` lists published articles; `robots.txt` points crawlers to that sitemap. Deploy the repository to activate these routes. Run the new migration before publishing.
+Vercel routes `/blog` to the editorial index and `/blog/{slug}` to server-rendered article HTML with canonical, Open Graph, Twitter, and BlogPosting metadata. `/blog/sitemap.xml` lists published articles; `robots.txt` points crawlers to that sitemap. Deploy the repository to activate these routes. Run the new migration before publishing.
 
 ## Customize the signup confirmation email
 
