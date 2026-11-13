@@ -1,11 +1,23 @@
 {
-  "version": 1,
+  "version": 2,
   "skills": {
     "chrome-extensions": {
       "source": "GoogleChrome/modern-web-guidance",
       "sourceType": "github",
       "skillPath": "skills/chrome-extensions/SKILL.md",
-      "computedHash": "4b7e7beb7711c75ba267dcd5e3483d56aaa49d4670db88fd8619afea970cbccc"
+      "computedHash": "802ef1e0135ebd69e0eec533914754ba8ed0f080af86e55400de6e7fb22e6bae"
+    },
+    "supabase": {
+      "source": "supabase/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/supabase/SKILL.md",
+      "computedHash": "2fbff32fd63b7d31585cacf0ed43e5bf8d05dd20d6c0c751d256cb967a00eec1"
+    },
+    "supabase-postgres-best-practices": {
+      "source": "supabase/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/supabase-postgres-best-practices/SKILL.md",
+      "computedHash": "3eb972c2d7c818e544e35cc33ea8d7147d4d78ae08142ef40037b0fbac7a2505"
     }
   }
 }

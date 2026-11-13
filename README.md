@@ -32,15 +32,9 @@ The website signup form asks for a username and country. Usernames are public an
 
 ## Enable Blog articles and Premium publishing
 
-After the existing migrations, run [`supabase/migrations/202611130001_editorial_threads.sql`](supabase/migrations/202611130001_editorial_threads.sql) in Supabase SQL Editor. Sign in to Fandom Room once with the account that should always have publishing access, then add that account as an editor in SQL Editor:
+After the existing migrations, run [`supabase/migrations/202611130001_editorial_threads.sql`](supabase/migrations/202611130001_editorial_threads.sql) and then [`supabase/migrations/202611130002_blog_superuser.sql`](supabase/migrations/202611130002_blog_superuser.sql) in Supabase SQL Editor. The second migration automatically grants `info@fandomroom.com` Blog editor administration. It works for an existing account and will also grant the role if that email signs up later.
 
-```sql
-insert into public.blog_editors(user_id)
-select id from auth.users where email = 'YOUR-ACCOUNT-EMAIL'
-on conflict (user_id) do nothing;
-```
-
-Your account can publish through `/blog` on any plan. Active Premium members can also publish their own articles. Creating new image polls and rankings is now a Premium feature, enforced by the database as well as the site interface. Article comments are public to read and require a signed-in account to post. The migration creates the `blog-images` public cover bucket and the article/comment tables with row-level access policies.
+The `info@fandomroom.com` account can publish, edit, and remove any article, moderate article comments, and create polls and rankings without a Premium subscription. Active Premium members can publish their own articles and create new polls and rankings. Article comments are public to read and require a signed-in account to post. The first migration creates the `blog-images` public cover bucket and the article/comment tables with row-level access policies; the second migration adds the superuser permissions.
 
 Vercel routes `/blog` to the editorial index and `/blog/{slug}` to server-rendered article HTML with canonical, Open Graph, Twitter, and BlogPosting metadata. `/blog/sitemap.xml` lists published articles; `robots.txt` points crawlers to that sitemap. Deploy the repository to activate these routes. Run the new migration before publishing.
 

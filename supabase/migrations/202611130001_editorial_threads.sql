@@ -59,9 +59,6 @@ grant select on public.blog_editors to authenticated;
 grant insert, update, delete on public.blog_posts to authenticated;
 grant insert, delete on public.blog_comments to authenticated;
 
--- Seed the authenticated account as an editor after signing up (replace the UUID):
--- insert into public.blog_editors(user_id) values ('YOUR-AUTH-USER-UUID');
-
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('blog-images', 'blog-images', true, 5242880, array['image/jpeg','image/png','image/webp'])
 on conflict (id) do nothing;

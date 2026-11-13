@@ -100,7 +100,10 @@
   function requirePremium(action) {
     if (currentUser?.app_metadata?.plan === 'premium') return action();
     if (!currentUser) { pendingAction = () => requirePremium(action); openAuth(); return; }
-    openBackdrop('premiumBackdrop');
+    api.isBlogEditor().then(isEditor => {
+      if (isEditor) action();
+      else openBackdrop('premiumBackdrop');
+    }).catch(() => openBackdrop('premiumBackdrop'));
   }
   function openAuth(mode = 'signup') {
     authMode = mode; updateAuthMode(); openBackdrop('authBackdrop');
