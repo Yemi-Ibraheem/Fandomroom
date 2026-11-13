@@ -64,12 +64,40 @@
   }
 
   document.addEventListener('click', event => {
+    const target = event.target instanceof Element ? event.target : null;
+    const control = target?.closest('button, a, [role="button"]');
+    if (control && !control.closest('#analytics-consent')) {
+      const href = control instanceof HTMLAnchorElement ? control.getAttribute('href') : null;
+      let destination = null;
+      if (href) {
+        try { destination = new URL(href, location.href).pathname; } catch {}
+      }
+      window.FandomRoomAnalytics?.capture('ui_interaction', {
+        action: 'click',
+        element: control.tagName.toLowerCase(),
+        element_id: control.id || undefined,
+        element_name: control.getAttribute('data-analytics') || control.getAttribute('data-filter-link') || undefined,
+        destination
+      });
+    }
     if (event.target.closest('[data-cookie-settings]')) {
       event.preventDefault();
       localStorage.removeItem(consentKey);
       render();
       document.getElementById('analytics-consent')?.scrollIntoView({ block: 'nearest' });
     }
+  });
+  document.addEventListener('change', event => {
+    const control = event.target;
+    if (!(control instanceof HTMLSelectElement || control instanceof HTMLInputElement) || control.type === 'file') return;
+    if (control.closest('#analytics-consent') || ['password', 'email', 'search', 'text'].includes(control.type)) return;
+    window.FandomRoomAnalytics?.capture('ui_interaction', {
+      action: 'change',
+      element: control.tagName.toLowerCase(),
+      element_id: control.id || undefined,
+      element_name: control.name || undefined,
+      control_type: control.type || 'select'
+    });
   });
   document.addEventListener('fandomroom:analytics', event => {
     if (localStorage.getItem(consentKey) === 'accepted' && window.posthog?.capture) {

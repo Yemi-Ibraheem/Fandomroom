@@ -14,6 +14,10 @@
   let myResponse = [];
   let pollResults = [];
   let ownThreads = false;
+  let dashboardMode = false;
+  let featuredPoll = null;
+  let featuredRanking = null;
+  let featuredPollSelection = [];
   let toastTimer;
   const translationLanguages = {
     fr: { flag: '🇫🇷', name: 'French' },
@@ -36,6 +40,13 @@
     if (/Failed to fetch|NetworkError/i.test(text)) return 'Could not reach Fandom Room. Check your connection and try again.';
     return text;
   }
+  function authErrorMessage(error, mode) {
+    const message = error?.message || '';
+    if (mode === 'signin' && /invalid login credentials|invalid email or password/i.test(message)) return 'Incorrect email or password. Check your details and try again, or use “Forgot or change password?”.';
+    if (/email not confirmed/i.test(message)) return 'Please confirm your email address before signing in.';
+    if (/failed to fetch|networkerror/i.test(message)) return 'Could not reach Fandom Room. Check your connection and try again.';
+    return niceError(error);
+  }
   function timeAgo(value) {
     const seconds = Math.max(0, Math.floor((Date.now() - new Date(value).getTime()) / 1000));
     if (seconds < 60) return 'just now';
@@ -50,6 +61,17 @@
     $('#translationLanguage').value = translationLanguage;
     $('#languageFlag').textContent = translationLanguages[translationLanguage].flag;
     localStorage.setItem('fandomroom-translation-language', translationLanguage);
+  }
+  function initializeCountryOptions() {
+    const select = $('#authCountry');
+    if (!select || select.dataset.populated === 'true') return;
+    const regions = 'AD AE AF AG AI AL AM AO AQ AR AS AT AU AW AX AZ BA BB BD BE BF BG BH BI BJ BL BM BN BO BQ BR BS BT BV BW BY BZ CA CC CD CF CG CH CI CK CL CM CN CO CR CU CV CW CX CY CZ DE DJ DK DM DO DZ EC EE EG EH ER ES ET FI FJ FK FM FO FR GA GB GD GE GF GG GH GI GL GM GN GP GQ GR GS GT GU GW GY HK HM HN HR HT HU ID IE IL IM IN IO IQ IR IS IT JE JM JO JP KE KG KH KI KM KN KP KR KW KY KZ LA LB LC LI LK LR LS LT LU LV LY MA MC MD ME MF MG MH MK ML MM MN MO MP MQ MR MS MT MU MV MW MX MY MZ NA NC NE NF NG NI NL NO NP NR NU NZ OM PA PE PF PG PH PK PL PM PN PR PS PT PW PY QA RE RO RS RU RW SA SB SC SD SE SG SH SI SJ SK SL SM SN SO SR SS ST SV SX SY SZ TC TD TF TG TH TJ TK TL TM TN TO TR TT TV TW TZ UA UG UM US UY UZ VA VC VE VG VI VN VU WF WS XK YE YT ZA ZM ZW';
+    const names = new Intl.DisplayNames(['en'], { type: 'region' });
+    const priority = ['GB', 'US', 'JP', 'FR'];
+    const options = priority.concat(regions.split(' ').filter(code => !priority.includes(code)).sort((a,b) => names.of(a).localeCompare(names.of(b))));
+    select.replaceChildren(new Option('Select your country', '', true, true));
+    options.forEach(code => select.add(new Option(names.of(code), names.of(code))));
+    select.dataset.populated = 'true';
   }
   async function translateComment(button) {
     const comment = button.closest('[data-comment-body]');
@@ -108,23 +130,32 @@
   }
   function openAuth(mode = 'signup') {
     authMode = mode; updateAuthMode(); openBackdrop('authBackdrop');
-    (authMode === 'signup' ? $('#authUsername') : $('#authEmail')).focus();
+    (authMode === 'signup' ? $('#authUsername') : authMode === 'resetPassword' ? $('#authPassword') : $('#authEmail')).focus();
   }
   function updateAuthMode() {
-    const signup = authMode === 'signup';
-    $('#authTitle').textContent = signup ? 'Join Fandom Room' : 'Welcome back';
-    $('#authIntro').textContent = signup ? 'Create a room for the fandoms you love.' : 'Sign in to vote, rank, create threads, and reply.';
-    $('#authSubmit').textContent = signup ? 'Create account' : 'Sign in';
-    $('#authPassword').autocomplete = signup ? 'new-password' : 'current-password';
+    const signup = authMode === 'signup', resetting = authMode === 'resetPassword';
+    $('#authTitle').textContent = signup ? 'Join Fandom Room' : resetting ? 'Choose a new password' : 'Welcome back';
+    $('#authIntro').textContent = signup ? 'Create a room for the fandoms you love.' : resetting ? 'Set a new password for your account.' : 'Sign in to vote, rank, create threads, and reply.';
+    $('#authSubmit').textContent = signup ? 'Create account' : resetting ? 'Update password' : 'Sign in';
+    $('#authTabs').hidden = resetting;
+    $('#authEmailField').hidden = resetting;
+    $('#authEmail').required = !resetting;
+    $('#authPasswordField').querySelector('label').textContent = resetting ? 'New password' : 'Password';
+    $('#authPassword').autocomplete = signup || resetting ? 'new-password' : 'current-password';
+    $('#authPassword').minLength = 8;
     $('#signupFields').hidden = !signup;
     $('#authUsername').required = signup;
     $('#authCountry').required = signup;
+    $('#forgotPassword').hidden = authMode !== 'signin';
+    $('#authDivider').hidden = resetting;
+    $('#googleAuth').hidden = resetting;
     $('#authTabSignup').classList.toggle('active', signup);
     $('#authTabSignup').setAttribute('aria-selected', String(signup));
     $('#authTabSignin').classList.toggle('active', !signup);
     $('#authTabSignin').setAttribute('aria-selected', String(!signup));
-    $('#authForm').setAttribute('aria-labelledby', signup ? 'authTabSignup' : 'authTabSignin');
+    $('#authForm').setAttribute('aria-labelledby', resetting ? 'authTitle' : signup ? 'authTabSignup' : 'authTabSignin');
     $('#authError').textContent = '';
+    $('#authError').classList.remove('auth-success');
   }
   async function syncHeader() {
     const session = await api.getSession(); currentUser = session?.user || null;
@@ -136,7 +167,7 @@
     const url = new URL(location.href);
     if (id) url.searchParams.set('thread', id); else url.searchParams.delete('thread');
     history.pushState(null, '', url.pathname + url.search);
-    renderRoute();
+    return renderRoute();
   }
   function shareUrl(id) { return `${location.origin}/api/share?thread=${encodeURIComponent(id)}`; }
   async function shareThread(thread) {
@@ -155,6 +186,8 @@
   }
   function goHome() {
     currentThread = null;
+    dashboardMode = false;
+    const dashboard = $('#dashboardPanel'); if (dashboard) dashboard.hidden = true;
     $('#threadDetail').hidden = true; $('#threadFeed').hidden = false; $('#typeSwitch').hidden = false;
     $('#pageTitle').textContent = 'Fan questions, open floor.'; $('#breadcrumb').innerHTML = 'Discover <b>/</b> Community';
     renderFeed();
@@ -163,6 +196,7 @@
     const id = new URLSearchParams(location.search).get('thread');
     if (!id) { goHome(); return; }
     $('#threadFeed').hidden = true; $('#typeSwitch').hidden = true; $('#threadDetail').hidden = false;
+    const dashboard = $('#dashboardPanel'); if (dashboard) dashboard.hidden = true;
     $('#feedState').hidden = true; $('#pageTitle').textContent = 'Fandom Room thread';
     $('#breadcrumb').innerHTML = 'Discover <b>/</b> <span>Thread</span>';
     $('#threadDetail').innerHTML = '<div class="state-message">Loading this thread…</div>';
@@ -190,6 +224,98 @@
     } catch (error) {
       state.innerHTML = `<div class="empty"><strong>Threads could not load</strong>${escapeHtml(niceError(error))}</div>`;
     }
+  }
+  async function loadLandingHighlights() {
+    try {
+      const [polls, rankings] = await Promise.all([api.listThreads('poll'), api.listThreads('ranking')]);
+      featuredPoll = polls[0] || null;
+      featuredRanking = rankings[0] || null;
+      renderFeaturedPoll();
+      renderFeaturedRanking();
+      const mine = currentUser ? await api.listThreads('all', '', currentUser.id) : [];
+      const shareThread = mine[0] || null;
+      if (shareThread) {
+        const item = [...(shareThread.items || [])].sort((a,b) => a.position-b.position)[0];
+        $('#sharePreviewTitle').textContent = shareThread.title;
+        $('#sharePreviewMeta').textContent = `${shareThread.thread_type === 'poll' ? 'Poll' : 'Ranking'} · ${shareThread.topic} · ${authorName(shareThread)}`;
+        const art = $('.preview-art', $('#sharePreview'));
+        if (item?.image_url) art.style.backgroundImage = `linear-gradient(0deg,#08090c85,transparent),url("${item.image_url.replace(/["\\]/g, '')}")`;
+      } else {
+        $('#sharePreviewTitle').textContent = currentUser ? 'Your first post will appear here.' : 'Sign in and create a post to preview it here.';
+        $('#sharePreviewMeta').textContent = 'Your own latest poll or ranking will be shown in this social preview.';
+        $('.preview-art', $('#sharePreview')).style.backgroundImage = '';
+      }
+    } catch {
+      $('#featuredPollContent').innerHTML = '<p class="feature-loading">The latest poll will appear here when the community has posted one.</p>';
+      $('#featuredRankingContent').innerHTML = '<p class="feature-loading">The latest ranking will appear here when the community has posted one.</p>';
+    }
+  }
+  function renderFeaturedPoll() {
+    const root = $('#featuredPollContent');
+    if (!featuredPoll) { root.innerHTML = '<p class="feature-loading">No polls have been posted yet.</p>'; return; }
+    const items = [...(featuredPoll.items || [])].sort((a,b) => a.position-b.position);
+    root.innerHTML = `<div class="featured-poll-question"><div><span>${escapeHtml(featuredPoll.topic)} · ${escapeHtml(authorName(featuredPoll))}</span><h3>${escapeHtml(featuredPoll.title)}</h3>${featuredPoll.context ? `<p>${escapeHtml(featuredPoll.context)}</p>` : ''}</div><button class="feature-open" id="openFeaturedPoll">Open poll ↗</button></div><div class="featured-poll-options">${items.map(item => `<button type="button" class="featured-poll-option ${featuredPollSelection.includes(item.id) ? 'selected' : ''}" data-featured-poll-item="${escapeHtml(item.id)}"><img src="${escapeHtml(item.image_url)}" alt=""><span>${escapeHtml(item.label)}</span></button>`).join('')}</div><div class="featured-poll-foot"><span>${featuredPoll.poll_mode === 'multiple' ? 'Choose one or more' : 'Choose one'}</span><button class="response-button" id="submitFeaturedPoll">Vote on this poll</button></div>`;
+    $('#openFeaturedPoll').addEventListener('click', () => routeToThread(featuredPoll.id));
+    $$('[data-featured-poll-item]', root).forEach(button => button.addEventListener('click', () => {
+      const id = button.dataset.featuredPollItem;
+      if (featuredPoll.poll_mode === 'single') featuredPollSelection = [id];
+      else featuredPollSelection = featuredPollSelection.includes(id) ? featuredPollSelection.filter(value => value !== id) : [...featuredPollSelection, id];
+      renderFeaturedPoll();
+    }));
+    $('#submitFeaturedPoll').addEventListener('click', () => requireAuth(async () => {
+      if (!featuredPollSelection.length) { toast('Choose an option first.'); return; }
+      try { await api.vote(featuredPoll.id, featuredPollSelection); toast('Vote saved.'); routeToThread(featuredPoll.id); }
+      catch (error) { toast(niceError(error)); }
+    }));
+  }
+  function renderFeaturedRanking() {
+    const root = $('#featuredRankingContent');
+    $('#featuredRankingActions').hidden = !featuredRanking;
+    if (!featuredRanking) { root.innerHTML = '<p class="feature-loading">No rankings have been posted yet.</p>'; return; }
+    const items = [...(featuredRanking.items || [])].sort((a,b) => a.position-b.position);
+    $('#featuredRankingTitle').textContent = featuredRanking.title;
+    $('#featuredRankingMeta').textContent = `${featuredRanking.topic} · by ${authorName(featuredRanking)} · ${timeAgo(featuredRanking.created_at)}`;
+    root.innerHTML = `<div class="featured-ranking-list">${items.map((item,index) => `<button class="featured-ranking-item" type="button" data-open-featured-ranking><span>${String(index+1).padStart(2,'0')}</span><img src="${escapeHtml(item.image_url)}" alt=""><strong>${escapeHtml(item.label)}</strong><i>↗</i></button>`).join('')}</div>`;
+    $$('[data-open-featured-ranking]', root).forEach(button => button.addEventListener('click', () => routeToThread(featuredRanking.id)));
+    $('#commentFeaturedRanking').onclick = async () => {
+      await routeToThread(featuredRanking.id);
+      const field = $('#commentForm input');
+      $('#commentForm')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (!currentUser) { pendingAction = () => $('#commentForm input')?.focus(); openAuth(); }
+      else field?.focus();
+    };
+    $('#createFeaturedRanking').onclick = async () => {
+      if (!currentUser) { openBackdrop('premiumBackdrop'); return; }
+      const allowed = currentUser.app_metadata?.plan === 'premium' || await api.isBlogEditor().catch(() => false);
+      if (!allowed) { openBackdrop('premiumBackdrop'); return; }
+      filter = 'ranking'; openCreate(); $('#createType').value = 'ranking'; setCreateMode('ranking');
+    };
+  }
+  async function openDashboard() {
+    dashboardMode = true;
+    ownThreads = false;
+    filter = 'all';
+    $('#threadDetail').hidden = true; $('#threadFeed').hidden = false; $('#typeSwitch').hidden = false;
+    $$('#typeSwitch button').forEach(button => button.classList.toggle('active', button.dataset.mode === 'all'));
+    $('#pageTitle').textContent = 'Your dashboard';
+    $('#breadcrumb').innerHTML = 'Fandom Room <b>/</b> Dashboard';
+    const canCreate = currentUser?.app_metadata?.plan === 'premium' || await api.isBlogEditor().catch(() => false);
+    let dashboard = $('#dashboardPanel');
+    if (!dashboard) {
+      dashboard = document.createElement('section'); dashboard.id = 'dashboardPanel'; dashboard.className = 'dashboard-panel';
+      $('#typeSwitch').after(dashboard);
+    }
+    dashboard.innerHTML = `<div class="dashboard-top"><div><span class="eyebrow">${canCreate ? 'CREATOR WORKSPACE' : 'YOUR FANDOM ROOM'}</span><h2>${canCreate ? 'Create something fans can debate.' : 'The latest from your fandoms.'}</h2><p>${canCreate ? 'Publish an image poll or ranking for the community.' : 'Catch up on the newest polls and rankings, and join the conversation.'}</p></div>${canCreate ? '<div class="dashboard-actions"><button class="create" data-dashboard-create="poll">＋ Create a poll</button><button class="create" data-dashboard-create="ranking">＋ Create a ranking</button></div>' : '<div class="dashboard-prompts"><button class="feature-upgrade" id="dashboardUpgrade">Upgrade to Premium</button><a class="feature-download" href="https://chromewebstore.google.com/detail/nbmmplanbdlgeacfdihflofadoeigelf?utm_source=item-share-cb" target="_blank" rel="noopener"><img src="images/chrome-icon.webp" alt="">Download Chrome extension ↗</a></div>'}</div><div class="dashboard-latest" id="dashboardLatest">Loading the latest polls and rankings…</div>`;
+    dashboard.hidden = false;
+    $$('[data-dashboard-create]', dashboard).forEach(button => button.addEventListener('click', () => requirePremium(() => { filter = button.dataset.dashboardCreate; openCreate(); $('#createType').value = filter; setCreateMode(filter); })));
+    $('#dashboardUpgrade')?.addEventListener('click', () => openBackdrop('premiumBackdrop'));
+    try {
+      const [polls, rankings] = await Promise.all([api.listThreads('poll'), api.listThreads('ranking')]);
+      dashboard.querySelector('#dashboardLatest').innerHTML = [polls[0],rankings[0]].filter(Boolean).map(thread => `<button class="dashboard-thread" type="button" data-dashboard-thread="${escapeHtml(thread.id)}"><span>${thread.thread_type === 'poll' ? 'LATEST POLL' : 'LATEST RANKING'}</span><strong>${escapeHtml(thread.title)}</strong><small>${escapeHtml(thread.topic)} · ${timeAgo(thread.created_at)}</small></button>`).join('') || 'No polls or rankings have been posted yet.';
+      $$('[data-dashboard-thread]', dashboard).forEach(button => button.addEventListener('click', () => routeToThread(button.dataset.dashboardThread)));
+    } catch { dashboard.querySelector('#dashboardLatest').textContent = 'Could not load the latest posts.'; }
+    renderFeed();
+    $('#community').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
   function makeThreadCard(thread) {
     const card = document.createElement('article'); card.className = 'thread-card'; card.tabIndex = 0;
@@ -227,8 +353,11 @@
     rankedItems = existingRank.length ? existingRank.map(row => row.item_id) : thread.ranking_mode === 'top_three' ? [] : [...(thread.items || [])].sort((a, b) => a.position - b.position).map(item => item.id);
     selectedPollItems = hasVoted ? myResponse.map(row => row.item_id) : [];
     if (hasVoted) { try { pollResults = await api.pollResults(thread.id); } catch {} }
-    let communityRankings = [];
-    if (thread.thread_type === 'ranking') { try { communityRankings = await api.rankingResults(thread.id); } catch {} }
+    let communityRankings = [], feedback = { agree: 0, disagree: 0, my_vote: null };
+    if (thread.thread_type === 'ranking') {
+      try { communityRankings = await api.rankingResults(thread.id); } catch {}
+      try { feedback = await api.rankingFeedback(thread.id) || feedback; } catch {}
+    }
     let comments = [];
     try { comments = await api.loadComments(thread.id); } catch {}
     const name = authorName(thread); const items = [...(thread.items || [])].sort((a, b) => a.position - b.position);
@@ -258,10 +387,20 @@
     $('#breadcrumb').innerHTML = `Discover <b>/</b> ${escapeHtml(thread.topic)}`;
     const pollResponseCount = pollResults.reduce((sum, row) => sum + Number(row.response_count || 0), 0);
     const pollResultLabel = thread.poll_mode === 'multiple' ? 'selections' : 'votes';
-    $('#threadDetail').innerHTML = `<article class="thread-detail" data-thread-id="${thread.id}"><button class="back-link" id="backHome">← Back to discover</button><div class="thread-top"><div class="avatar">${escapeHtml(initials(name))}</div><div><div class="author">${escapeHtml(name)}</div><div class="meta">${escapeHtml(timeAgo(thread.created_at))} · ${escapeHtml(thread.topic)}</div></div><span class="type-tag">${mode === 'poll' ? 'Image poll' : 'Ranking'}</span></div><span class="detail-topic">${escapeHtml(thread.topic)}</span><h2 class="thread-title">${escapeHtml(thread.title)}</h2>${thread.context ? `<p class="detail-context">${escapeHtml(thread.context)}</p>` : ''}${mode === 'poll' ? `<div class="detail-items" id="pollChoices">${renderItems(thread, 'poll', hasVoted ? pollResults : [], selectedPollItems)}</div>` : `<div class="rank-list" id="rankingChoices">${rankingRows}</div><p class="rank-stat">${thread.ranking_mode === 'full' ? 'Reorder every item to submit your list.' : `Choose ${Math.min(3, items.length)} items in your preferred order. Use arrows to adjust.`}</p>`}<div class="detail-actions"><span>${mode === 'poll' ? (hasVoted ? `${pollResponseCount} ${pollResultLabel} · results revealed` : 'Results are visible after your vote') : (hasResponse ? 'Your ranking is saved. You can update it.' : 'Rankings show each item’s community average.')}</span><button class="share-thread" id="shareThread">↗ Share thread</button></div><button class="response-button" id="responseButton" ${closed ? 'disabled' : ''}>${responseAction}</button><section class="discussion"><div class="discussion-head"><h3>Discussion</h3><span>${comments.length} ${comments.length === 1 ? 'reply' : 'replies'}</span></div><div id="commentList">${renderComments(comments)}</div><form class="comment-form" id="commentForm"><input maxlength="2000" placeholder="Add to the discussion…" aria-label="Add to the discussion"><button>Reply</button></form></section></article>`;
+    $('#threadDetail').innerHTML = `<article class="thread-detail" data-thread-id="${thread.id}"><button class="back-link" id="backHome">← Back to discover</button><div class="thread-top"><div class="avatar">${escapeHtml(initials(name))}</div><div><div class="author">${escapeHtml(name)}</div><div class="meta">${escapeHtml(timeAgo(thread.created_at))} · ${escapeHtml(thread.topic)}</div></div><span class="type-tag">${mode === 'poll' ? 'Image poll' : 'Ranking'}</span></div><span class="detail-topic">${escapeHtml(thread.topic)}</span><h2 class="thread-title">${escapeHtml(thread.title)}</h2>${thread.context ? `<p class="detail-context">${escapeHtml(thread.context)}</p>` : ''}${mode === 'poll' ? `<div class="detail-items" id="pollChoices">${renderItems(thread, 'poll', hasVoted ? pollResults : [], selectedPollItems)}</div>` : `<div class="rank-list" id="rankingChoices">${rankingRows}</div><p class="rank-stat">${thread.ranking_mode === 'full' ? 'Reorder every item to submit your list.' : `Choose ${Math.min(3, items.length)} items and set their order.`}</p><div class="ranking-feedback"><strong>Do you agree with this ranking?</strong><div class="ranking-feedback-actions"><button type="button" data-ranking-opinion="agree" class="${feedback.my_vote === 'agree' ? 'selected' : ''}">Agree</button><button type="button" data-ranking-opinion="disagree" class="${feedback.my_vote === 'disagree' ? 'selected' : ''}">Disagree</button></div><div class="ranking-feedback-counts" ${feedback.my_vote ? '' : 'hidden'}><span>Agree <b>${Number(feedback.agree || 0)}</b></span><span>Disagree <b>${Number(feedback.disagree || 0)}</b></span></div></div>`}<div class="detail-actions"><span>${mode === 'poll' ? (hasVoted ? `${pollResponseCount} ${pollResultLabel} · results revealed` : 'Results are visible after your vote') : (hasResponse ? 'Your ranking is saved. You can update it.' : 'Rankings show each item’s community average.')}</span><button class="share-thread" id="shareThread">↗ Share thread</button></div><button class="response-button" id="responseButton" ${closed ? 'disabled' : ''}>${responseAction}</button><section class="discussion"><div class="discussion-head"><h3>Discussion</h3><span>${comments.length} ${comments.length === 1 ? 'reply' : 'replies'}</span></div><div id="commentList">${renderComments(comments)}</div><form class="comment-form" id="commentForm"><input maxlength="2000" placeholder="Add to the discussion…" aria-label="Add to the discussion"><button>Reply</button></form></section></article>`;
     $('#backHome').addEventListener('click', () => { history.pushState(null, '', location.pathname); goHome(); });
     $('#shareThread').addEventListener('click', () => shareThread(thread));
     $('#responseButton').addEventListener('click', () => requireAuth(() => submitResponse(thread)));
+    if (mode === 'ranking') $$('[data-ranking-opinion]').forEach(button => button.addEventListener('click', () => requireAuth(async () => {
+      try {
+        await api.voteRankingFeedback(thread.id, button.dataset.rankingOpinion);
+        const updated = await api.rankingFeedback(thread.id);
+        const counts = $('.ranking-feedback-counts');
+        counts.innerHTML = `<span>Agree <b>${Number(updated.agree || 0)}</b></span><span>Disagree <b>${Number(updated.disagree || 0)}</b></span>`;
+        counts.hidden = false;
+        $$('[data-ranking-opinion]').forEach(item => item.classList.toggle('selected', item.dataset.rankingOpinion === updated.my_vote));
+      } catch (error) { toast(niceError(error)); }
+    })));
     if (mode === 'poll') $$('#pollChoices .detail-choice').forEach(choice => {
       choice.addEventListener('click', event => { if (event.target.matches('input')) return; selectPollChoice(choice.dataset.itemId, thread); });
       choice.addEventListener('keydown', event => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); selectPollChoice(choice.dataset.itemId, thread); } });
@@ -343,6 +482,8 @@
     } catch (error) { toast(niceError(error)); }
   }
   function setFilter(next, keepOwnThreads = false) {
+    dashboardMode = false;
+    const dashboard = $('#dashboardPanel'); if (dashboard) dashboard.hidden = true;
     if (!keepOwnThreads) ownThreads = false;
     filter = next; $('#threadDetail').hidden = true; $('#threadFeed').hidden = false; $('#typeSwitch').hidden = false;
     $$('#typeSwitch button').forEach(button => button.classList.toggle('active', button.dataset.mode === filter));
@@ -406,16 +547,43 @@
       pollMode: $('#pollMode').value, rankingMode: $('#rankingMode').value, closesAt: type === 'poll' && closeDays ? new Date(Date.now() + closeDays * 86400000).toISOString() : null };
     $('#publishThread').disabled = true; $('#publishThread').textContent = 'Publishing…';
     try {
-      const id = await api.createThread(draft); analytics('thread_created', { thread_type: type }); closeBackdrop('createBackdrop'); toast('Your thread is live.'); routeToThread(id); await syncHeader();
+      const id = await api.createThread(draft); analytics('thread_created', { thread_type: type }); closeBackdrop('createBackdrop'); toast('Your thread is live.'); await syncHeader(); await loadLandingHighlights(); routeToThread(id);
     } catch (error) { $('#createError').textContent = niceError(error); }
     finally { $('#publishThread').disabled = false; $('#publishThread').textContent = 'Publish thread'; }
   }
+  async function requestPasswordReset() {
+    const emailField = $('#authEmail');
+    if (!emailField.value.trim()) {
+      $('#authError').textContent = 'Enter your email address first.';
+      emailField.focus();
+      return;
+    }
+    if (!emailField.checkValidity()) { emailField.reportValidity(); return; }
+    const button = $('#forgotPassword');
+    button.disabled = true; button.textContent = 'Sending reset link…';
+    $('#authError').textContent = ''; $('#authError').classList.remove('auth-success');
+    try {
+      await api.requestPasswordReset(emailField.value.trim());
+      $('#authError').textContent = 'If an account uses that email, a password reset link is on its way.';
+      $('#authError').classList.add('auth-success');
+    } catch (error) {
+      $('#authError').textContent = authErrorMessage(error, 'resetPassword');
+    } finally {
+      button.disabled = false; button.textContent = 'Forgot or change password?';
+    }
+  }
   async function submitAuth(event) {
     event.preventDefault(); $('#authError').textContent = '';
-    const email = $('#authEmail').value.trim(); const password = $('#authPassword').value;
-    $('#authSubmit').disabled = true; $('#authSubmit').textContent = authMode === 'signup' ? 'Creating…' : 'Signing in…';
+    $('#authError').classList.remove('auth-success');
+    const mode = authMode, email = $('#authEmail').value.trim(), password = $('#authPassword').value;
+    $('#authSubmit').disabled = true; $('#authSubmit').textContent = mode === 'signup' ? 'Creating…' : mode === 'resetPassword' ? 'Updating…' : 'Signing in…';
     try {
-      if (authMode === 'signup') {
+      if (mode === 'resetPassword') {
+        await api.updatePassword(password);
+        await syncHeader(); closeBackdrop('authBackdrop'); toast('Your password has been changed.'); await openDashboard();
+        return;
+      }
+      if (mode === 'signup') {
         const username = $('#authUsername').value.trim().toLowerCase();
         const country = $('#authCountry').value.trim();
         if (country.length < 2) throw new Error('Enter your country.');
@@ -424,10 +592,15 @@
         analytics('sign_up_completed', { method: 'email', email_confirmation_required: Boolean(result.needsEmailConfirmation) });
         if (result.needsEmailConfirmation) { closeBackdrop('authBackdrop'); toast('Check your email to confirm your Fandom Room account.'); return; }
       } else await api.signIn(email, password);
-      await syncHeader(); closeBackdrop('authBackdrop'); toast('You’re signed in.');
-      const next = pendingAction; pendingAction = null; if (next) await next();
-    } catch (error) { $('#authError').textContent = niceError(error); }
-    finally { $('#authSubmit').disabled = false; updateAuthMode(); }
+      await syncHeader(); closeBackdrop('authBackdrop'); toast('You’re signed in.'); await loadLandingHighlights();
+      const next = pendingAction; pendingAction = null;
+      if (next) await next();
+      else await openDashboard();
+    } catch (error) { $('#authError').textContent = authErrorMessage(error, mode); }
+    finally {
+      $('#authSubmit').disabled = false;
+      $('#authSubmit').textContent = authMode === 'signup' ? 'Create account' : authMode === 'resetPassword' ? 'Update password' : 'Sign in';
+    }
   }
   function initTheme() {
     const body = document.body;
@@ -449,13 +622,20 @@
   }
   async function init() {
     if (!api?.configured) { $('#feedState').innerHTML = '<div class="empty"><strong>Setup needed</strong>Fandom Room is missing its public Supabase configuration.</div>'; return; }
-    try { if (await api.resumeLinkSession()) analytics('sign_up_completed', { method: 'google' }); } catch (error) { toast(niceError(error)); }
-    await syncHeader(); await renderRoute();
+    const recoveryLink = new URLSearchParams(location.hash.slice(1)).get('type') === 'recovery';
+    let resumed = false;
+    try { resumed = await api.resumeLinkSession(); if (resumed) analytics('sign_up_completed', { method: 'google' }); } catch (error) { toast(niceError(error)); }
+    await syncHeader(); await renderRoute(); await loadLandingHighlights();
+    if (recoveryLink) {
+      if (currentUser) openAuth('resetPassword');
+      else toast('That password reset link has expired. Request a new one and try again.');
+    } else if (resumed && !new URLSearchParams(location.search).get('thread')) await openDashboard();
     $('#authButton').addEventListener('click', async () => {
       if (!currentUser) { openAuth(); return; }
-      await api.signOut(); await syncHeader(); if (currentThread) await renderThread(currentThread); toast('You’re signed out.');
+      await api.signOut(); await syncHeader(); dashboardMode = false; const dashboard = $('#dashboardPanel'); if (dashboard) dashboard.hidden = true; if (currentThread) await renderThread(currentThread); await loadLandingHighlights(); toast('You’re signed out.');
     });
     $('#authForm').addEventListener('submit', submitAuth);
+    $('#forgotPassword').addEventListener('click', requestPasswordReset);
     $('#googleAuth').addEventListener('click', async () => {
       $('#authError').textContent = '';
       try {
@@ -464,7 +644,7 @@
             if (!field.checkValidity()) { field.reportValidity(); return; }
           }
           const username = $('#authUsername').value.trim().toLowerCase();
-          const country = $('#authCountry').value.trim();
+          const country = $('#authCountry').value;
           if (country.length < 2) throw new Error('Enter your country.');
           if (!(await api.isUsernameAvailable(username))) throw new Error('That username is already taken. Choose another one.');
           api.signInWithGoogle({ username, country });
@@ -494,7 +674,7 @@
     $('#searchInput').addEventListener('input', event => { searchText = event.target.value.trim(); if (currentThread) return; renderFeed(); });
     $$('#typeSwitch button').forEach(button => button.addEventListener('click', () => setFilter(button.dataset.mode)));
     $$('[data-filter-link]').forEach(link => link.addEventListener('click', event => { event.preventDefault(); setFilter(link.dataset.filterLink); $('#community').scrollIntoView({ behavior: 'smooth', block: 'start' }); }));
-    $('#myThreads').addEventListener('click', () => { if (!currentUser) { pendingAction = () => { ownThreads = true; setFilter('all', true); }; openAuth(); return; } ownThreads = !ownThreads; setFilter('all', ownThreads); });
+    $('#myThreads').addEventListener('click', () => { if (!currentUser) { pendingAction = openDashboard; openAuth(); return; } openDashboard(); });
     $$('[data-close="auth"]').forEach(button => button.addEventListener('click', () => closeBackdrop('authBackdrop')));
     $$('[data-close="premium"]').forEach(button => button.addEventListener('click', () => closeBackdrop('premiumBackdrop')));
     $$('[data-close="create"]').forEach(button => button.addEventListener('click', () => closeBackdrop('createBackdrop')));
@@ -522,38 +702,13 @@
     $('#landingPrev').addEventListener('click', () => { show(active - 1); restart(); });
     restart();
   }
-  function initFeaturedRanking() {
-    const board = $('#featuredTierBoard');
-    if (!board) return;
-    const updateControls = () => $$('[data-tier]', board).forEach((row, index, rows) => {
-      $('[data-tier-move="up"]', row).disabled = index === 0;
-      $('[data-tier-move="down"]', row).disabled = index === rows.length - 1;
-    });
-    const reorder = (row, direction) => {
-      const sibling = direction === 'up' ? row.previousElementSibling : row.nextElementSibling;
-      if (!sibling) return false;
-      board.insertBefore(direction === 'up' ? row : sibling, direction === 'up' ? sibling : row);
-      return true;
-    };
-    $$('[data-tier-move]', board).forEach(button => button.addEventListener('click', () => requirePremium(() => {
-      if (reorder(button.closest('[data-tier]'), button.dataset.tierMove)) {
-        updateControls();
-        toast('Preview order changed for this session.');
-      }
-    })));
-    $$('.tier-name', board).forEach(input => input.addEventListener('click', () => requirePremium(() => {
-      input.readOnly = false;
-      input.focus();
-      input.select();
-    })));
-    $('#rateFeaturedRanking').addEventListener('click', () => requirePremium(() => toast('Your rating is saved in this preview only.')));
+  function initPremiumCheckout() {
     $('#premiumSignIn').addEventListener('click', async event => {
       const button = event.currentTarget;
       closeBackdrop('premiumBackdrop');
       if (!currentUser) { pendingAction = () => startPremiumCheckout(button); openAuth(); return; }
       await startPremiumCheckout(button);
     });
-    updateControls();
   }
   async function startPremiumCheckout(button) {
     button.disabled = true;
@@ -573,10 +728,11 @@
     }
   }
   document.addEventListener('DOMContentLoaded', () => {
+    initializeCountryOptions();
     setTranslationLanguage(translationLanguage);
     $('#translationLanguage').addEventListener('change', event => setTranslationLanguage(event.target.value));
-    initTheme(); init();
+    initTheme(); initPremiumCheckout(); init();
   });
-  document.addEventListener('DOMContentLoaded', () => { initLandingCarousel(); initFeaturedRanking(); });
+  document.addEventListener('DOMContentLoaded', () => { initLandingCarousel(); });
 })();
 

@@ -69,6 +69,23 @@
     return { session: readSession(), needsEmailConfirmation: !result.access_token };
   }
   async function signIn(email, password) { return storeSession(await authRequest('token?grant_type=password', { email, password })); }
+  async function requestPasswordReset(email) {
+    const redirect = `${location.origin}${location.pathname}`;
+    return authRequest(`recover?redirect_to=${encodeURIComponent(redirect)}`, { email });
+  }
+  async function updatePassword(password) {
+    const active = await getSession();
+    if (!active?.access_token) throw new Error('Your password reset link has expired. Request a new one and try again.');
+    const response = await fetch(`${baseUrl}/auth/v1/user`, {
+      method: 'PUT',
+      headers: { apikey: apiKey, Authorization: `Bearer ${active.access_token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password })
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(result.msg || result.message || result.error_description || 'Could not change your password. Please try again.');
+    storeSession({ ...active, user: result });
+    return result;
+  }
   async function isUsernameAvailable(username) {
     const rows = await request(`profiles?${params({ select: 'id', username: `eq.${username.toLowerCase()}`, limit: '1' })}`);
     return rows.length === 0;
@@ -182,6 +199,8 @@
   }
   async function pollResults(id) { return request('rpc/get_fandomroom_poll_results', { method: 'POST', body: JSON.stringify({ p_thread_id: id }) }, true); }
   async function rankingResults(id) { return request('rpc/get_fandomroom_ranking_results', { method: 'POST', body: JSON.stringify({ p_thread_id: id }) }); }
+  async function rankingFeedback(id) { return request('rpc/get_fandomroom_ranking_feedback', { method: 'POST', body: JSON.stringify({ p_thread_id: id }) }); }
+  async function voteRankingFeedback(id, opinion) { return request('rpc/submit_fandomroom_ranking_feedback', { method: 'POST', body: JSON.stringify({ p_thread_id: id, p_opinion: opinion }) }, true); }
   async function vote(id, itemIds) { return request('rpc/submit_fandomroom_poll_vote', { method: 'POST', body: JSON.stringify({ p_thread_id: id, p_item_ids: itemIds }) }, true); }
   async function rank(id, itemIds) { return request('rpc/submit_fandomroom_ranking', { method: 'POST', body: JSON.stringify({ p_thread_id: id, p_item_ids: itemIds }) }, true); }
   async function loadComments(id) {
@@ -207,5 +226,5 @@
   async function uploadBlogCover(file, ownerId) { if (!file || !/^image\/(jpeg|png|webp)$/.test(file.type) || file.size > 5 * 1024 * 1024) throw new Error('Use a JPG, PNG or WebP cover image up to 5 MB.'); const ext = file.type.split('/')[1].replace('jpeg','jpg'); const path = `${ownerId}/${crypto.randomUUID()}.${ext}`; const active = await getSession(); const response = await fetch(`${baseUrl}/storage/v1/object/blog-images/${path}`, { method:'POST', headers:{ apikey:apiKey, Authorization:`Bearer ${active.access_token}`, 'Content-Type':file.type }, body:file }); if (!response.ok) { const err=await response.json().catch(()=>({})); throw new Error(err.message || 'Could not upload the cover image.'); } return `${baseUrl}/storage/v1/object/public/blog-images/${path}`; }
   async function listBlogComments(postId) { return request(`blog_comments?${params({ select: 'id,body,created_at,author:profiles!blog_comments_author_id_fkey(username)', post_id: `eq.${postId}`, order: 'created_at.asc' })}`); }
   async function addBlogComment(postId, body) { const active = await getSession(); if (!active) throw new Error('Sign in to comment.'); return request('blog_comments', { method:'POST', headers:{ Prefer:'return=minimal' }, body:JSON.stringify({ post_id:postId, author_id:active.user.id, body }) }, true); }
-  globalThis.FandomRoomWeb = { configured: Boolean(baseUrl && apiKey), getSession, resumeLinkSession, signUp, signIn, signInWithGoogle, isUsernameAvailable, signOut, createThread, listThreads, loadThread, loadMyResponse, pollResults, rankingResults, vote, rank, loadComments, addComment, listArticles, loadArticle, isBlogEditor, saveArticle, uploadBlogCover, listBlogComments, addBlogComment };
+  globalThis.FandomRoomWeb = { configured: Boolean(baseUrl && apiKey), getSession, resumeLinkSession, signUp, signIn, requestPasswordReset, updatePassword, signInWithGoogle, isUsernameAvailable, signOut, createThread, listThreads, loadThread, loadMyResponse, pollResults, rankingResults, rankingFeedback, voteRankingFeedback, vote, rank, loadComments, addComment, listArticles, loadArticle, isBlogEditor, saveArticle, uploadBlogCover, listBlogComments, addBlogComment };
 })();
