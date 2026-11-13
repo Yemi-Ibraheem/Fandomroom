@@ -48,6 +48,7 @@
     if (!response.ok || !user.id) throw new Error('That sign-in link has expired. Please sign in again.');
     storeSession({ access_token: accessToken, refresh_token: params.get('refresh_token') || '', expires_in: Number(params.get('expires_in') || 3600), user });
     const pendingProfile = localStorage.getItem('fandomroom:pending-signup-profile');
+    const isSignup = Boolean(pendingProfile);
     if (pendingProfile) {
       try {
         await saveSignupProfile(JSON.parse(pendingProfile), accessToken);
@@ -57,7 +58,7 @@
       }
     }
     history.replaceState(null, '', `${location.pathname}${location.search}`);
-    return true;
+    return isSignup;
   }
   async function signUp(email, password, profile = {}) {
     const redirect = `${location.origin}${location.pathname}`;

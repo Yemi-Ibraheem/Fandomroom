@@ -2,6 +2,7 @@
   const $ = (selector, root = document) => root.querySelector(selector);
   const $$ = (selector, root = document) => [...root.querySelectorAll(selector)];
   const api = globalThis.FandomRoomWeb;
+  const analytics = (name, properties) => globalThis.FandomRoomAnalytics?.capture(name, properties);
   let filter = 'all';
   let searchText = '';
   let currentThread = null;
@@ -168,6 +169,7 @@
     try {
       const thread = await api.loadThread(id);
       if (!thread) { $('#threadDetail').innerHTML = '<div class="empty"><strong>Thread not found</strong>This link may be out of date.</div>'; return; }
+      analytics('thread_viewed', { thread_type: thread.thread_type });
       currentThread = thread; await renderThread(thread);
     } catch (error) {
       $('#threadDetail').innerHTML = `<div class="empty"><strong>Could not load this thread</strong>${escapeHtml(niceError(error))}</div>`;
@@ -268,7 +270,7 @@
       $$('[data-move]', $('#rankingChoices')).forEach(button => button.addEventListener('click', () => moveRankItem(button.dataset.item, button.dataset.move, thread)));
       $$('[data-rank-select]', $('#rankingChoices')).forEach(input => input.addEventListener('change', () => toggleTopThree(input.dataset.rankSelect, input.checked, thread)));
     }
-    $('#commentForm').addEventListener('submit', event => { event.preventDefault(); const input = $('input', event.currentTarget); const body = input.value.trim(); if (!body) return; requireAuth(async () => { try { await api.addComment(thread.id, body); await renderThread(thread); toast('Your reply is posted.'); } catch (error) { toast(niceError(error)); } }); });
+    $('#commentForm').addEventListener('submit', event => { event.preventDefault(); const input = $('input', event.currentTarget); const body = input.value.trim(); if (!body) return; requireAuth(async () => { try { await api.addComment(thread.id, body); analytics('comment_posted', { location: 'thread' }); await renderThread(thread); toast('Your reply is posted.'); } catch (error) { toast(niceError(error)); } }); });
     $('#commentList').addEventListener('click', event => {
       const button = event.target.closest('[data-translate]');
       if (button) translateComment(button);
@@ -289,7 +291,7 @@
     if ($('.reply-box', container)) return;
     const form = document.createElement('form'); form.className = 'reply-box';
     form.innerHTML = '<input maxlength="2000" placeholder="Write a reply…" aria-label="Write a reply"><button>Reply</button>';
-    form.addEventListener('submit', event => { event.preventDefault(); const input = $('input', form); const body = input.value.trim(); if (!body) return; requireAuth(async () => { try { await api.addComment(currentThread.id, body, parentId); await renderThread(currentThread); toast('Your reply is posted.'); } catch (error) { toast(niceError(error)); } }); });
+    form.addEventListener('submit', event => { event.preventDefault(); const input = $('input', form); const body = input.value.trim(); if (!body) return; requireAuth(async () => { try { await api.addComment(currentThread.id, body, parentId); analytics('comment_posted', { location: 'thread_reply' }); await renderThread(currentThread); toast('Your reply is posted.'); } catch (error) { toast(niceError(error)); } }); });
     container.append(form); $('input', form).focus();
   }
   function selectPollChoice(itemId, thread) {
@@ -330,10 +332,12 @@
       if (thread.thread_type === 'poll') {
         if (!selectedPollItems.length) { toast('Choose an option first.'); return; }
         await api.vote(thread.id, selectedPollItems);
+        analytics('vote_submitted', { thread_type: 'poll', selection_count: selectedPollItems.length });
       } else {
         const ids = thread.ranking_mode === 'full' ? rankedItems : rankedItems.filter(id => $(`[data-rank-select="${CSS.escape(id)}"]`, $('#rankingChoices'))?.checked);
         if (thread.ranking_mode === 'top_three' && ids.length !== Math.min(3, thread.items.length)) { toast(`Choose ${Math.min(3, thread.items.length)} items and set your order.`); return; }
         await api.rank(thread.id, ids);
+        analytics('ranking_submitted', { thread_type: 'ranking', selection_count: ids.length });
       }
       await syncHeader(); await renderThread(thread); toast(thread.thread_type === 'poll' ? 'Vote saved. Poll results are now visible.' : 'Your ranking is saved.');
     } catch (error) { toast(niceError(error)); }
@@ -402,7 +406,7 @@
       pollMode: $('#pollMode').value, rankingMode: $('#rankingMode').value, closesAt: type === 'poll' && closeDays ? new Date(Date.now() + closeDays * 86400000).toISOString() : null };
     $('#publishThread').disabled = true; $('#publishThread').textContent = 'Publishing…';
     try {
-      const id = await api.createThread(draft); closeBackdrop('createBackdrop'); toast('Your thread is live.'); routeToThread(id); await syncHeader();
+      const id = await api.createThread(draft); analytics('thread_created', { thread_type: type }); closeBackdrop('createBackdrop'); toast('Your thread is live.'); routeToThread(id); await syncHeader();
     } catch (error) { $('#createError').textContent = niceError(error); }
     finally { $('#publishThread').disabled = false; $('#publishThread').textContent = 'Publish thread'; }
   }
@@ -417,6 +421,7 @@
         if (country.length < 2) throw new Error('Enter your country.');
         if (!(await api.isUsernameAvailable(username))) throw new Error('That username is already taken. Choose another one.');
         const result = await api.signUp(email, password, { username, country });
+        analytics('sign_up_completed', { method: 'email', email_confirmation_required: Boolean(result.needsEmailConfirmation) });
         if (result.needsEmailConfirmation) { closeBackdrop('authBackdrop'); toast('Check your email to confirm your Fandom Room account.'); return; }
       } else await api.signIn(email, password);
       await syncHeader(); closeBackdrop('authBackdrop'); toast('You’re signed in.');
@@ -444,7 +449,7 @@
   }
   async function init() {
     if (!api?.configured) { $('#feedState').innerHTML = '<div class="empty"><strong>Setup needed</strong>Fandom Room is missing its public Supabase configuration.</div>'; return; }
-    try { await api.resumeLinkSession(); } catch (error) { toast(niceError(error)); }
+    try { if (await api.resumeLinkSession()) analytics('sign_up_completed', { method: 'google' }); } catch (error) { toast(niceError(error)); }
     await syncHeader(); await renderRoute();
     $('#authButton').addEventListener('click', async () => {
       if (!currentUser) { openAuth(); return; }

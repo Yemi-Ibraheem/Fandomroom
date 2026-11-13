@@ -12,6 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="homepage.css">
+  <script src="/analytics.js" defer></script>
 </head>
 <body class="privacy-body" data-theme="dark">
   <div class="shell privacy-shell">
@@ -22,7 +23,7 @@
     <main class="privacy-content">
       <div class="eyebrow">FANDOM ROOM · YOUR INFORMATION</div>
       <h1>Privacy Policy</h1>
-      <p class="privacy-updated">Last updated: 9 November 2026</p>
+      <p class="privacy-updated">Last updated: 13 November 2026</p>
       <p class="privacy-lede">This notice explains what information Fandom Room handles when you use our website and browser extension, and the choices available to you.</p>
 
       <nav class="privacy-toc" aria-label="On this page">
@@ -40,6 +41,7 @@
           <li><strong>Profile and community content.</strong> We store your Fandom Room username and the content you choose to submit, such as polls, rankings, images, comments, votes, anime discussion posts, likes, and follows. Your username, threads, images, and comments are visible to other visitors. Individual poll and ranking responses are associated with your account and are not displayed as your personal selections; results are shown in aggregate according to the feature.</li>
           <li><strong>Website preferences and session data.</strong> The website uses browser local storage for your sign-in session and display preference. Supabase and Google may also use cookies or similar technologies as part of authentication and service security.</li>
           <li><strong>Extension page scan.</strong> When you click the Fandom Room extension button or Refresh &amp; scan on a viewing page, the extension reads that page’s URL, title, visible text, headings, and structured metadata to identify the title and episode. Page contents are processed inside the extension and are not sent to Fandom Room. The matched title and episode are used to load the discussion from Supabase; posts you submit are sent there.</li>
+          <li><strong>Analytics (optional).</strong> If you accept analytics, PostHog stores an analytics identifier on your device and processes page views and selected feature events, such as completed sign-ups, thread views, thread creation, votes, rankings, and comments. We do not send email addresses, usernames, or submitted post text to PostHog. Session recordings and click autocapture are off. Analytics is off unless you accept; you can change your choice using Cookie settings below.</li>
           <li><strong>Technical information.</strong> Our service providers may process basic technical information, such as device, browser, IP address, and request data, to deliver, secure, and troubleshoot their services.</li>
         </ul>
       </section>
@@ -51,19 +53,19 @@
 
       <section id="sharing">
         <h2>Who receives information</h2>
-        <p>Fandom Room uses <strong>Supabase</strong> for authentication, database, and image storage; <strong>Google</strong> when you choose Google sign-in; <strong>Google Translate</strong> when you request a translation of a discussion post or reply in the browser extension; <strong>Resend</strong> to deliver email; and <strong>Vercel</strong> to host the website. When you request a translation, the selected post or reply text is sent to Google Translate to provide the translation. These providers process information to provide their services to us. Public profile names, threads, uploaded images, and comments can be viewed by anyone. If you share a thread to a social platform, that platform handles the link and any information you choose to share under its own privacy terms.</p>
-        <p>We do not currently use advertising or analytics services on the website, and we do not sell personal information. We may disclose information where required by law or to protect the service and its users.</p>
+        <p>Fandom Room uses <strong>Supabase</strong> for authentication, database, and image storage; <strong>Google</strong> when you choose Google sign-in; <strong>Google Translate</strong> when you request a translation of a discussion post or reply in the browser extension; <strong>Resend</strong> to deliver email; <strong>Vercel</strong> to host the website; and <strong>PostHog</strong> for optional website analytics when you accept. When you request a translation, the selected post or reply text is sent to Google Translate to provide the translation. These providers process information to provide their services to us. Public profile names, threads, uploaded images, and comments can be viewed by anyone. If you share a thread to a social platform, that platform handles the link and any information you choose to share under its own privacy terms.</p>
+        <p>We do not sell personal information. We may disclose information where required by law or to protect the service and its users.</p>
       </section>
 
       <section id="storage">
         <h2>Storage and retention</h2>
-        <p>Account and community information is stored with Supabase. Browser session and display preferences remain in local storage until they expire, are replaced, or you clear your browser data. The current extension discussion remains in the open panel until you scan another page or close the panel.</p>
+        <p>Account and community information is stored with Supabase. Browser session and display preferences remain in local storage until they expire, are replaced, or you clear your browser data. Your analytics choice is also saved in local storage so we can remember whether analytics is allowed. PostHog’s analytics identifier is stored only if you accept. The current extension discussion remains in the open panel until you scan another page or close the panel.</p>
         <p>We keep account and community information while it is needed to provide Fandom Room. To request access, correction, or deletion of your account information or content, contact us using the address below. We may retain information where needed for legal, safety, or security reasons.</p>
       </section>
 
       <section id="choices">
         <h2>Your choices and rights</h2>
-        <p>You can choose whether to create an account, use Google sign-in, post content, or use the browser extension. You can clear local browser data or remove the extension to delete locally stored preferences and session data. Depending on where you live, privacy laws may give you rights to access, correct, delete, or receive certain personal information. Contact us and we’ll respond to your request.</p>
+        <p>You can choose whether to create an account, use Google sign-in, post content, or use the browser extension. You can reject analytics, accept it, or change your choice later with Cookie settings in the footer. You can also clear local browser data or remove the extension to delete locally stored preferences and session data. Depending on where you live, privacy laws may give you rights to access, correct, delete, or receive certain personal information. Contact us and we’ll respond to your request.</p>
       </section>
 
       <section id="changes">
@@ -77,7 +79,7 @@
       </section>
       <a class="privacy-back" href="/">← Back to Fandom Room</a>
     </main>
-    <footer class="site-footer"><nav aria-label="Legal"><a href="/privacy.html" aria-current="page">Privacy</a><a href="/terms.html">Terms of Service</a></nav><span>© Fandom Room</span></footer>
+    <footer class="site-footer"><nav aria-label="Legal"><a href="/privacy.html" aria-current="page">Privacy</a><a href="/terms.html">Terms of Service</a><a href="#" data-cookie-settings>Cookie settings</a></nav><span>© Fandom Room</span></footer>
   </div>
 </body>
 </html>
