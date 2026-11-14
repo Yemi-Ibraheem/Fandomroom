@@ -182,14 +182,14 @@
     }
   }
   async function listThreads(type = 'all', query = '', authorId = '') {
-    const filters = { select: 'id,thread_type,title,context,topic,anime_slug,poll_mode,ranking_mode,closes_at,created_at,author:profiles!threads_author_id_fkey(username),items:thread_items(id,label,image_url,position)', order: 'created_at.desc', limit: '40' };
+    const filters = { select: 'id,thread_type,title,context,topic,anime_slug,poll_mode,ranking_mode,closes_at,created_at,author:profiles!threads_author_id_fkey(username),items:thread_items!thread_items_thread_id_fkey(id,label,image_url,position)', order: 'created_at.desc', limit: '40' };
     if (type !== 'all') filters.thread_type = `eq.${type}`;
     if (authorId) filters.author_id = `eq.${authorId}`;
     if (query) filters.title = `ilike.*${query.replace(/[%,()]/g, '')}*`;
     return request(`threads?${params(filters)}`);
   }
   async function loadThread(id) {
-    const rows = await request(`threads?${params({ select: 'id,thread_type,title,context,topic,anime_slug,poll_mode,ranking_mode,closes_at,created_at,author:profiles!threads_author_id_fkey(username),items:thread_items(id,label,image_url,position)', id: `eq.${id}`, limit: '1' })}`);
+    const rows = await request(`threads?${params({ select: 'id,thread_type,title,context,topic,anime_slug,poll_mode,ranking_mode,closes_at,created_at,author:profiles!threads_author_id_fkey(username),items:thread_items!thread_items_thread_id_fkey(id,label,image_url,position)', id: `eq.${id}`, limit: '1' })}`);
     return rows[0] || null;
   }
   async function loadMyResponse(id) {
